@@ -7,8 +7,6 @@ require! {
   child_process: {spawn}
 }
 
-process.setMaxListeners 0
-
 used-equations = Object.create null
 
 source = process.argv[2]
@@ -21,6 +19,7 @@ fs.read-file source, (error, data) ->
 
   text .= replace /@<m>\{((\\}|[^}])*)\}/g (string, equation) ->
     equation .= replace /\\}/g '}'
+    equation .= trim!
     hash = crypto.create-hash \md5 .update equation .digest \hex
 
     used-equations[hash] = equation
@@ -29,6 +28,7 @@ fs.read-file source, (error, data) ->
 
   text .= replace /\/\/texequation{([\s\S]+?)\/\/}/g (string, equation) ->
     equation .= replace /\\}/g '}'
+    equation .= trim!
     hash = crypto.create-hash \md5 .update equation .digest \hex
 
     used-equations[hash] = equation
@@ -37,12 +37,15 @@ fs.read-file source, (error, data) ->
 
   fs.write-file dest, text
 
-  used-equations |> keys |> each (hash) ->
+  async.each-limit (used-equations |> keys), 5, (hash, done) ->
     equation = used-equations[hash]
-    imgfile = "src/images/math-#{hash}.png"
+    imgfile = "images/math-#{hash}.png"
 
     fs.access imgfile, fs.F_OK, (not-exists) ->
       if not-exists
         tex2png = spawn \ruby [\scripts/tex2png.rb equation, imgfile]
         tex2png.stdout.pipe process.stdout
         tex2png.stderr.pipe process.stderr
+        tex2png.on \close (code) -> done!
+      else
+        done!
