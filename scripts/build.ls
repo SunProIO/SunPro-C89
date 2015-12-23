@@ -44,6 +44,5 @@ fs.read-file source, (error, data) ->
     fs.access imgfile, fs.F_OK, (not-exists) ->
       if not-exists
         tex2png = spawn \ruby [\scripts/tex2png.rb equation, imgfile]
-        console.log \ruby [\scripts/tex2png.rb equation, imgfile]
         tex2png.stdout.pipe process.stdout
         tex2png.stderr.pipe process.stderr
