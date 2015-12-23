@@ -77,3 +77,10 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+
+# Build fils
+*.xml
+*.html
+*.tex
+*.pdf
