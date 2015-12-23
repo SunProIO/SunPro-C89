@@ -1,6 +1,7 @@
 REVIEWS = $(shell find . -name '*.re' | sed 's/ /\\ /g')
 SOURCES = $(REVIEWS:.re=.build-re)
 XMLS = $(REVIEWS:.re=.xml)
+HTMLS = $(REVIEWS:.re=.html)
 
 SRCDIR = src
 
@@ -22,4 +23,7 @@ clean:
 %.xml: %.build-re
 	$(BE) review-compile --target idgxml "$<" > "$@"
 
-all: $(XMLS)
+%.html: %.build-re
+	$(BE) review-compile --target html "$<" > "$@"
+
+all: $(XMLS) $(HTMLS)

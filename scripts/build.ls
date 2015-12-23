@@ -3,7 +3,7 @@ require! {
   glob
   async
   crypto
-  'prelude-ls': {each, map, filter}
+  'prelude-ls': {each, map, filter, keys}
   child_process: {spawn}
 }
 
@@ -37,7 +37,13 @@ fs.read-file source, (error, data) ->
 
   fs.write-file dest, text
 
-  for hash, equation of used-equations
-    tex2png = spawn \ruby [\scripts/tex2png.rb equation, "src/images/math-#{hash}.png"]
-    tex2png.stdout.pipe process.stdout
-    tex2png.stderr.pipe process.stderr
+  used-equations |> keys |> each (hash) ->
+    equation = used-equations[hash]
+    imgfile = "src/images/math-#{hash}.png"
+
+    fs.access imgfile, fs.F_OK, (not-exists) ->
+      if not-exists
+        tex2png = spawn \ruby [\scripts/tex2png.rb equation, imgfile]
+        console.log \ruby [\scripts/tex2png.rb equation, imgfile]
+        tex2png.stdout.pipe process.stdout
+        tex2png.stderr.pipe process.stderr
