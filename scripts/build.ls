@@ -1,6 +1,7 @@
 require! {
   fs
   glob
+  path
   async
   crypto
   'prelude-ls': {each, map, filter, keys}
@@ -24,22 +25,21 @@ fs.read-file source, (error, data) ->
 
     used-equations[hash] = equation
 
-    return "@<icon>{math-#{hash}}"
+    return "@<icon>{math/#{hash}}"
 
   text .= replace /\/\/texequation{([\s\S]+?)\/\/}/g (string, equation) ->
-    equation .= replace /\\}/g '}'
     equation .= trim!
     hash = crypto.create-hash \md5 .update equation .digest \hex
 
     used-equations[hash] = equation
 
-    return "//indepimage[math-#{hash}]"
+    return "//indepimage[math/#{hash}]"
 
   fs.write-file dest, text
 
   async.each-limit (used-equations |> keys), 5, (hash, done) ->
     equation = used-equations[hash]
-    imgfile = "images/math-#{hash}.png"
+    imgfile = "#{path.dirname dest}/images/math/#{hash}.png"
 
     fs.access imgfile, fs.F_OK, (not-exists) ->
       if not-exists
