@@ -17,7 +17,9 @@
   },
   "homepage": "https://github.com/hakatashi/SunPro-C89#readme",
   "devDependencies": {
+    "async": "^1.5.0",
     "glob": "^6.0.1",
-    "livescript": "^1.4.0"
+    "livescript": "^1.4.0",
+    "prelude-ls": "^1.1.2"
   }
 }
