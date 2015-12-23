@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/hakatashi/SunPro-C89/issues"
   },
-  "homepage": "https://github.com/hakatashi/SunPro-C89#readme"
+  "homepage": "https://github.com/hakatashi/SunPro-C89#readme",
+  "devDependencies": {
+    "livescript": "^1.4.0"
+  }
 }
