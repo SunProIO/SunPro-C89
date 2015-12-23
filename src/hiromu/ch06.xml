@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doc xmlns:aid="http://ns.adobe.com/AdobeInDesign/4.0/"><title aid:pstyle="h1">第6章　固有声に基づく多対多声質変換</title><?dtp level="1" section="第6章　固有声に基づく多対多声質変換"?>
+<p>ここまで、変換元と変換先の話者のパラレルデータが存在していることを前提に、一対一の変換モデルを学習していく仕組みを紹介してきたが、ここからは、固有声(Eigenvoice)という概念に基づいた、変換元と変換先の話者のパラレルデータがなくても変換できるような仕組みを紹介し、実装していく。まずは、一対多の変換、つまりある特定の人の声質を任意の相手の声質に変換できる仕組みについて説明した後に、多対一の変換、つまり任意の人の声質を特定の相手の声質に変換できる仕組みについて説明し、その2つを組み合わせることで多対多の変換を実現するものとする。</p>
+<p>固有声による声質変換については「Eigenvoice Conversion Based on Gaussian Mixture Model<span type='bibref' idref='evgmm'>[8]</span>」を参照した。</p>
+<title aid:pstyle="h2">6.1　固有声の導入</title><?dtp level="2" section="6.1　固有声の導入"?>
+<p>固有声とは、顔画像認識で用いられている固有顔という概念を元にしたものある。固有顔とは、顔画像を主成分分析した際に得られる固有ベクトルを指し、様々な顔画像の、この固有ベクトルで形成される部分空間において類似度を取ることによって、低計算量かつ高精度で顔認識を実現することができる。これと同様に、声質変換においても、主成分分析を導入することによって一対多及び多対一の変換を実現する。ただし、ここで主成分分析の対象とするのは、音声の特徴量ではなく、GMMの平均ベクトルであるという大きな違いがある。</p>
+<p>ここからは、まず一対多の声質変換について説明する。一対多の場合は、モデル構築のために変換元の話者と第三者(以降、「事前学習用出力話者」という)のパラレルデータが多数用意されている状況を仮定する。このとき、変換元話者と事前学習用出力話者のそれぞれとの間で、共通の重みと分散共分散行列を用いるという制約の下、GMMに学習させて平均ベクトルを求めておく。そして、この平均ベクトルの出力成分に対して主成分分析をすることで固有ベクトル、つまり、いわゆる固有声を求めることができる。すると、任意の話者に対しても、この固有声空間に射影してやれば、変換に用いる平均ベクトルを求められるようになる。</p>
+<p>つまり、変換元話者と<replace idref="texinline-1"><pre>s</pre></replace>番目の事前学習用出力話者とのパラレルデータから学習したGMMの<replace idref="texinline-2"><pre>i</pre></replace>番目のガウス分布における平均ベクトルを<replace idref="texinline-3"><pre>\boldsymbol{\mu}_i (s) = [{\boldsymbol{\mu}_i ^ {(x)} (s)} ^ \top, {\boldsymbol{\mu}_i ^ {(y)} (s)} ^ \top] ^ \top</pre></replace>とすると、<replace idref="texinline-4"><pre>\boldsymbol{\mu}_i ^ {(y)} (s)</pre></replace>に対して主成分分析を行うことで以下のように表すことができる。</p>
+<replace idref="texblock-1">
+<pre>
+    \boldsymbol{\mu}_i ^ {(y)} (s) \simeq \boldsymbol{B}_i \boldsymbol{w} ^ {(s)} + \boldsymbol{b}_i ^ {(0)}
+</pre>
+</replace>
+<p>ここで、<replace idref="texinline-5"><pre>\boldsymbol{b}_i ^ {(0)}</pre></replace>がバイアスベクトル、<replace idref="texinline-6"><pre>\boldsymbol{B}_i = [\boldsymbol{b}_{i, 1}, \boldsymbol{b}_{i, 2}, ..., \boldsymbol{b}_{i, J}]</pre></replace>が固有ベクトルである。この<replace idref="texinline-7"><pre>\boldsymbol{B}_i</pre></replace>で張られる部分空間においては、<replace idref="texinline-8"><pre>\boldsymbol{\mu}_i ^ {(y)} (s)</pre></replace>はJ次元の重みベクトル<replace idref="texinline-9"><pre>\boldsymbol{w}_i ^ {(s)} = [w_{i, 1}, w_{i, 2}, ..., w_{i, J}] ^ \top</pre></replace>によって表される。そして、変換先話者に対応する重みベクトル<replace idref="texinline-10"><pre>\boldsymbol{w} ^ {(tar)}</pre></replace>を推定することができれば、平均ベクトル<replace idref="texinline-11"><pre>\boldsymbol{\mu}_i (tar)</pre></replace>を得ることができ、GMMを用いて特徴量の変換ができる。</p>
+<p>ここまでの説明を図で表すと以下の通りとなる。これを見ると、固有声に基づく変換は事前学習処理と話者適応処理の2つからなることが分かるだろう。</p>
+<img>
+<Image href="file://images/evgmm.png" scale="0.35" />
+<caption>図6.1　固有声を用いた変換の仕組み</caption>
+</img>
+<p>以上が、一対多の声質変換の基本的な仕組みである。多対一の場合は、GMMの学習の際に変換元話者と事前学習用出力話者を入れ替えた上で、平均ベクトルの入力成分に対して主成分分析してやれば同様に実現することができる。</p>
+<title aid:pstyle="h2">6.2　固有声による声質変換の事前学習</title><?dtp level="2" section="6.2　固有声による声質変換の事前学習"?>
+<p>まず、固有声による声質変換(以降、「固有声GMM」という)の事前学習処理について説明する。事前学習処理は、以下の3つのステップからなる。</p>
+<ol>
+<li aid:pstyle="ol-item" olnum="1" num="1">すべての事前学習用出力話者とのGMMで共通に用いられる重みと分散共分散行列の推定</li>
+<li aid:pstyle="ol-item" olnum="2" num="2">それぞれの事前学習用出力話者に対する平均ベクトルの推定</li>
+<li aid:pstyle="ol-item" olnum="3" num="3">主成分分析による固有ベクトルとバイアスベクトルの決定</li>
+</ol>
+<p>具体的な説明にあたって、変換元話者の特徴量を<replace idref="texinline-12"><pre>\boldsymbol{X}_t</pre></replace>、<replace idref="texinline-13"><pre>s</pre></replace>番目の事前学習用出力話者の特徴量を<replace idref="texinline-14"><pre>\boldsymbol{Y}_t ^ {(s)}</pre></replace>、それを結合したものを<replace idref="texinline-15"><pre>\boldsymbol{Z}_t ^ {(s)} = [\boldsymbol{X}_t ^ \top, {\boldsymbol{Y}_t ^ {(s)}} ^ \top] ^ \top</pre></replace>とし、事前学習用出力話者は<replace idref="texinline-16"><pre>S</pre></replace>人いるものとする。</p>
+<p>まず、重みと分散共分散行列の推定を行う。この際は、すべての事前学習用出力話者の特徴量に対して尤度が最大となるように学習してやればよい。つまり、推定されるパラメータを<replace idref="texinline-17"><pre>\boldsymbol{\lambda} ^ {(0)}</pre></replace>とすると、以下の通りである。</p>
+<replace idref="texblock-2">
+<pre>
+    \hat{\boldsymbol{\lambda}} ^ {(0)} = \underset{\boldsymbol{\lambda}}{argmax} \prod_{s = 1}^{S} \prod_{t = 1}^{T} P(\boldsymbol{Z}_t ^ {(s)} | \boldsymbol{\lambda})
+</pre>
+</replace>
+<p>ここで、<replace idref="texinline-18"><pre>T</pre></replace>は学習データのフレーム数を表している。</p>
+<p>次に、それぞれの事前学習用出力話者に対する平均ベクトルの推定を行う。ここで注意すべきなのは、<replace idref="texinline-19"><pre>\boldsymbol{\lambda} ^ {(0)}</pre></replace>の重みと分散共分散行列はそのままで、平均ベクトルのみ更新するという点である。</p>
+<replace idref="texblock-3">
+<pre>
+    \hat{\boldsymbol{\lambda}} ^ {(s)} = \underset{\boldsymbol{\lambda}}{argmax} \prod_{t = 1}^{T} P(\boldsymbol{Z}_t ^ {(s)} | \boldsymbol{\lambda} ^ {(s)})
+</pre>
+</replace>
+<p>最後に、主成分分析によって、固有ベクトルとバイアスベクトルの推定を行う。まず、それぞれの事前学習用出力話者に対して<replace idref="texinline-20"><pre>\boldsymbol{\lambda} ^ {(s)}</pre></replace>の出力平均ベクトルを<replace idref="texinline-21"><pre>\boldsymbol{\mu}_i ^ {(Y)} (s)</pre></replace>として、<replace idref="texinline-22"><pre>2DM</pre></replace>次元のスーパーベクトル<replace idref="texinline-23"><pre>SV ^ {(s)} = [{\boldsymbol{\mu}_1 ^ {(Y)} (s)} ^ \top, {\boldsymbol{\mu}_2 ^ {(Y)} (s)} ^ \top, ..., {\boldsymbol{\mu}_M ^ {(Y)} (s)} ^ \top] ^ \top</pre></replace>を求める。そして、全出力話者のスーパーベクトルに対して主成分分析を行うことによって、バイアスベクトル<replace idref="texinline-24"><pre>\boldsymbol{b}_i ^ {(0)}</pre></replace>及び固有ベクトル<replace idref="texinline-25"><pre>\boldsymbol{B}_i</pre></replace>を決定する。このとき、<replace idref="texinline-26"><pre>SV ^ {(s)}</pre></replace>は以下のように表すことができる。</p>
+<replace idref="texblock-4">
+<pre>
+    \begin{split}
+        SV ^ {(s)} &amp; \simeq [\boldsymbol{B}_1 ^ \top, \boldsymbol{B}_2 ^ \top, ..., \boldsymbol{B}_M ^ \top] ^ \top \boldsymbol{w} ^ {(s)} + [\boldsymbol{b}_1 ^ {(0)}, \boldsymbol{b}_2 ^ {(0)}, ..., \boldsymbol{b}_M ^ {(0)}] \\
+                   &amp; where \ \boldsymbol{b}_i ^ {(0)} = \frac{1}{S} \sum_{s = 1}^{S} \boldsymbol{\mu}_i ^ {(Y)} (s)
+    \end{split}
+</pre>
+</replace>
+<title aid:pstyle="h3">学習データの構築処理</title><?dtp level="3" section="学習データの構築処理"?>
+<p>固有声GMMについても、特徴量を受け取って変換処理を担うクラスと、与えられたSTFファイルのリストから特徴量を抽出して学習データを構築し、事前学習処理を呼び出す部分、そして保存された学習済みインスタンスを読み込んで変換処理を呼び出し、結果をSTFファイルとして保存する部分の3つに分けて実装する。</p>
+<p>まずは、学習データの構築と学習処理の呼び出しを実装する。今回は、一対多及び多対一の両方に対応できるようにする。はじめに、変換元話者と事前学習用出力話者のリストを受け取って、一対多の学習データを構築する関数を実装する。事前学習用出力話者の数だけ繰り返している以外はこれまでの学習処理と大きな差はないはずである。</p>
+<list type='emlist'><caption aid:pstyle='emlist-title'>一対多声質変換のための学習データの構築</caption>
+<pre>def one_to_many(source_list, target_list, dtw_cache):
+    source_mfcc = []
+
+    for i in xrange(len(source_list)):
+        source = STF()
+        source.loadfile(source_list[i])
+
+        mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = D)
+        source_mfcc.append(numpy.array([mfcc.mfcc(source.SPEC[frame]) \
+                                    for frame in xrange(source.SPEC.shape[0])]))
+
+    total_data = []
+
+    for i in xrange(len(target_list)):
+        learn_data = None
+
+        for j in xrange(len(target_list[i])):
+            print i, j
+
+            target = STF()
+            target.loadfile(target_list[i][j])
+
+            mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency, dimension = D)
+            target_mfcc = numpy.array([mfcc.mfcc(target.SPEC[frame]) \
+                                        for frame in xrange(target.SPEC.shape[0])])
+
+            cache_path = os.path.join(dtw_cache, '%s_%s.dtw' % \
+                tuple(map(lambda x: re.sub('[./]', '_', re.sub('^[./]*', '', x)), \
+                                                [source_list[j], target_list[i][j]])))
+            if os.path.exists(cache_path):
+                dtw = pickle.load(open(cache_path))
+            else:
+                dtw = DTW(source_mfcc[j], target_mfcc, \
+                    window = abs(source_mfcc[j].shape[0] - target_mfcc.shape[0]) * 2)
+                with open(cache_path, 'wb') as output:
+                    pickle.dump(dtw, output)
+
+            warp_data = dtw.align(target_mfcc, reverse = True)
+
+            data = numpy.hstack([source_mfcc[j], warp_data])
+            if learn_data is None:
+                learn_data = data
+            else:
+                learn_data = numpy.vstack([learn_data, data])
+
+        total_data.append(learn_data)
+
+    return total_data
+</pre></list>
+<p>次に、多対一の場合の処理を実装する。</p>
+<list type='emlist'><caption aid:pstyle='emlist-title'>多対一声質変換のための学習データの構築</caption>
+<pre>def many_to_one(source_list, target_list, dtw_cache):
+    target_mfcc = []
+
+    for i in xrange(len(target_list)):
+        target = STF()
+        target.loadfile(target_list[i])
+
+        mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency, dimension = D)
+        target_mfcc.append(numpy.array([mfcc.mfcc(target.SPEC[frame]) \
+                                    for frame in xrange(target.SPEC.shape[0])]))
+
+    total_data = []
+
+    for i in xrange(len(source_list)):
+        learn_data = None
+
+        for j in xrange(len(source_list[i])):
+            print i, j
+
+            source = STF()
+            source.loadfile(source_list[i][j])
+
+            mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = D)
+            source_mfcc = numpy.array([mfcc.mfcc(source.SPEC[frame]) \
+                                        for frame in xrange(source.SPEC.shape[0])])
+
+            cache_path = os.path.join(sys.argv[3], '%s_%s.dtw' % \
+                tuple(map(lambda x: re.sub('[./]', '_', re.sub('^[./]*', '', x)), \
+                                                [source_list[i][j], target_list[j]])))
+            if os.path.exists(cache_path):
+                dtw = pickle.load(open(cache_path))
+            else:
+                dtw = DTW(source_mfcc, target_mfcc[j], \
+                    window = abs(source_mfcc.shape[0] - target_mfcc[j].shape[0]) * 2)
+                with open(cache_path, 'wb') as output:
+                    pickle.dump(dtw, output)
+
+            warp_data = dtw.align(source_mfcc)
+
+            data = numpy.hstack([warp_data, target_mfcc[j]])
+            if learn_data is None:
+                learn_data = data
+            else:
+                learn_data = numpy.vstack([learn_data, data])
+
+        total_data.append(learn_data)
+
+    return total_data
+</pre></list>
+<p>最後に、実行時引数として与えられた話者データのリストから、一対多か多対一かどうかを判定し、学習データを構築した後にEVGMMクラスを生成する部分を実装する。学習データの構築の部分と合わせると、以下のようになる。</p>
+<codelist>
+<caption>リスト6.1　learn_evgmm.py</caption>
+<pre><span type='lineno'> 1: </span>#!/usr/bin/env python
+<span type='lineno'> 2: </span># coding: utf-8
+<span type='lineno'> 3: </span>
+<span type='lineno'> 4: </span>from stf import STF
+<span type='lineno'> 5: </span>from mfcc import MFCC
+<span type='lineno'> 6: </span>from dtw import DTW
+<span type='lineno'> 7: </span>from evgmm import EVGMM
+<span type='lineno'> 8: </span>
+<span type='lineno'> 9: </span>import numpy
+<span type='lineno'>10: </span>import os
+<span type='lineno'>11: </span>import pickle
+<span type='lineno'>12: </span>import re
+<span type='lineno'>13: </span>import sys
+<span type='lineno'>14: </span>
+<span type='lineno'>15: </span>D = 16
+<span type='lineno'>16: </span>
+<span type='lineno'>17: </span>def one_to_many(source_list, target_list, dtw_cache):
+<span type='lineno'>18: </span>    &lt;省略&gt;
+<span type='lineno'>19: </span>
+<span type='lineno'>20: </span>def many_to_one(source_list, target_list, dtw_cache):
+<span type='lineno'>21: </span>    &lt;省略&gt;
+<span type='lineno'>22: </span>
+<span type='lineno'>23: </span>if __name__ == '__main__':
+<span type='lineno'>24: </span>    if len(sys.argv) &lt; 5:
+<span type='lineno'>25: </span>        print 'Usage: %s [list of source stf] [list of target] ' + \
+<span type='lineno'>26: </span>                    '[dtw cache directory] [output file]' % sys.argv[0]
+<span type='lineno'>27: </span>        sys.exit()
+<span type='lineno'>28: </span>
+<span type='lineno'>29: </span>    source_list = open(sys.argv[1]).read().strip().split('\n')
+<span type='lineno'>30: </span>    target_list = open(sys.argv[2]).read().strip().split('\n')
+<span type='lineno'>31: </span>
+<span type='lineno'>32: </span>    if len(filter(lambda s: not s.endswith('.stf'), source_list)) == 0:
+<span type='lineno'>33: </span>        target_list = [open(target).read().strip().split('\n') \
+<span type='lineno'>34: </span>                                                for target in target_list]
+<span type='lineno'>35: </span>        total_data = one_to_many(source_list, target_list, sys.argv[3])
+<span type='lineno'>36: </span>        evgmm = EVGMM(total_data)
+<span type='lineno'>37: </span>    elif len(filter(lambda s: not s.endswith('.stf'), target_list)) == 0:
+<span type='lineno'>38: </span>        source_list = [open(source).read().strip().split('\n') \
+<span type='lineno'>39: </span>                                                for source in source_list]
+<span type='lineno'>40: </span>        total_data = many_to_one(source_list, target_list, sys.argv[3])
+<span type='lineno'>41: </span>        evgmm = EVGMM(total_data, True)
+<span type='lineno'>42: </span>
+<span type='lineno'>43: </span>    with open(sys.argv[4], 'wb') as output:
+<span type='lineno'>44: </span>        pickle.dump(evgmm, output)
+</pre></codelist>
+<title aid:pstyle="h3">事前学習処理の実装</title><?dtp level="3" section="事前学習処理の実装"?>
+<p>続いて、変換のためのクラスEVGMMを実装する。このコンストラクタによって事前学習を行う。</p>
+<p>ここで注意すべきなのは、それぞれの事前学習用出力話者に対する平均ベクトルを推定する際に、平均ベクトルのみを更新するようGMMのコンストラクタに<tt type='inline-code'>init_params = ''</tt>と<tt type='inline-code'>params = 'm'</tt>を指定しているという点である。<tt type='inline-code'>init_params = ''</tt>とすることで、初期化の際にすでに代入した<replace idref="texinline-27"><pre>\boldsymbol{\lambda} ^ {(0)}</pre></replace>のパラメータを上書きしないように設定し、<tt type='inline-code'>params = 'm'</tt>とすることで、学習の際に平均ベクトルのみを更新するように設定することができるのである。</p>
+<p>また、主成分分析にはsklearn.decomposition.PCAを用いている。</p>
+<list type='emlist'><caption aid:pstyle='emlist-title'>固有声GMMの事前学習処理</caption>
+<pre>    # 学習データは[[Xt, Yt(1)], [Xt, Yt(2)], ..., [Xt, Yt(S)]]のS個の要素を持つリスト
+    def __init__(self, learn_data, swap = False):
+        S = len(learn_data)
+        D = learn_data[0].shape[1] / 2
+
+        # すべての学習データについてパラメータを推定する
+        initial_gmm = GMM(n_components = M, covariance_type = 'full')
+        initial_gmm.fit(np.vstack(learn_data))
+
+        # λ(0)から得たパラメータを保存しておく
+        self.weights = initial_gmm.weights_
+        self.source_means = initial_gmm.means_[:, :D]
+        self.target_means = initial_gmm.means_[:, D:]
+        self.covarXX = initial_gmm.covars_[:, :D, :D]
+        self.covarXY = initial_gmm.covars_[:, :D, D:]
+        self.covarYX = initial_gmm.covars_[:, D:, :D]
+        self.covarYY = initial_gmm.covars_[:, D:, D:]
+
+        # スーパーベクトルはすべての出力話者についてまとめてS * 2DM次元の行列とする
+        sv = []
+
+        # 各出力話者について平均ベクトルを推定する
+        for i in xrange(S):
+            # 平均ベクトル以外は更新しないように設定する
+            gmm = GMM(n_components = M, params = 'm', init_params = '', \
+                                                    covariance_type = 'full')
+            gmm.weights_ = initial_gmm.weights_
+            gmm.means_ = initial_gmm.means_
+            gmm.covars_ = initial_gmm.covars_
+            gmm.fit(learn_data[i])
+
+            # 平均ベクトルを結合したスーパーベクトルを更新する
+            sv.append(gmm.means_)
+
+        sv = np.array(sv)
+
+        # スーパーベクトルの入力平均ベクトルにあたる部分を主成分分析にかける
+        source_pca = PCA()
+        source_pca.fit(sv[:, :, :D].reshape((S, M * D)))
+
+        # スーパーベクトルの出力平均ベクトルにあたる部分を主成分分析にかける
+        target_pca = PCA()
+        target_pca.fit(sv[:, :, D:].reshape((S, M * D)))
+
+        # 入力平均ベクトルと出力平均ベクトルに対する固有ベクトルのタプル
+        self.eigenvectors = source_pca.components_.reshape((M, D, S)), \
+                                    target_pca.components_.reshape((M, D, S))
+        # 入力平均ベクトルと出力平均ベクトルに対するバイアスベクトルのタプル
+        self.biasvectors = source_pca.mean_.reshape((M, D)), \
+                                    target_pca.mean_.reshape((M, D))
+
+        # 話者適応の際に更新するようの平均ベクトルの変数を用意しておく
+        self.fitted_source = self.source_means
+        self.fitted_target = self.target_means
+
+        self.swap = swap
+</pre></list>
+<title aid:pstyle="h2">6.3　固有声による声質変換の話者適応処理</title><?dtp level="2" section="6.3　固有声による声質変換の話者適応処理"?>
+<p>固有声GMMにおける話者適応処理は、変換先話者の特徴量から固有声の部分空間における重みベクトル<replace idref="texinline-28"><pre>\boldsymbol{w} ^ {(tar)}</pre></replace>を求めることによって行われる。つまり、話者適応によって得られるGMMの変換パラメータを<replace idref="texinline-29"><pre>\boldsymbol{\lambda} ^ {(tar)}</pre></replace>とすると、その出力平均ベクトル<replace idref="texinline-30"><pre>\boldsymbol{\mu}_i ^ {(X)} (tar)</pre></replace>は以下のように表すことができる。</p>
+<replace idref="texblock-5">
+<pre>
+    \boldsymbol{\mu}_i ^ {(X)} (tar) = \boldsymbol{B}_i w_i ^ {(tar)} + \boldsymbol{b}_i ^ {(0)}
+</pre>
+</replace>
+<p>このとき、変換先話者の特徴量を<replace idref="texinline-31"><pre>\boldsymbol{Y} ^ {(tar)}</pre></replace>として、求める重みベクトル<replace idref="texinline-32"><pre>\boldsymbol{w} ^ {(tar)}</pre></replace>は以下のように表される。</p>
+<replace idref="texblock-6">
+<pre>
+    \begin{split}
+        \hat{\boldsymbol{w}} ^ {(tar)} = &amp; \ \underset{\boldsymbol{w}}{argmax} \int P([\boldsymbol{X} ^ \top, {\boldsymbol{Y} ^ {(tar)}} ^ \top] ^ \top, \boldsymbol{\lambda} ^ {(tar)}) d \boldsymbol{X} \\
+                                      = &amp; \ \underset{\boldsymbol{w}}{argmax} \ P(\boldsymbol{Y} ^ {(tar)} | \boldsymbol{\lambda} ^ {(tar)})
+    \end{split}
+</pre>
+</replace>
+<p>ここで、確率密度関数<replace idref="texinline-33"><pre>P(\boldsymbol{Y} ^ {(tar)} | \boldsymbol{\lambda} ^ {(tar)})</pre></replace>はGMMでモデル化されているので、EMアルゴリズムに基づき、以下のQ関数を最大化することで求められる。</p>
+<replace idref="texblock-7">
+<pre>
+    \mathcal{Q} (\boldsymbol{w} ^ {(tar)}, \hat{\boldsymbol{w}} ^ {(tar)}) = \sum_{all \ \boldsymbol{m}} P(\boldsymbol{m} | \boldsymbol{Y} ^ {(tar)}, \boldsymbol{\lambda} ^ {(tar)}) \ log \ P(\boldsymbol{Y} ^ {(tar)}, \boldsymbol{m} | \hat{\boldsymbol{\lambda}} ^ {(tar)})
+</pre>
+</replace>
+<p>このとき、<replace idref="texinline-34"><pre>\hat{\boldsymbol{w}} ^ {(tar)}</pre></replace>は以下のように求められる。</p>
+<replace idref="texblock-8">
+<pre>
+    \hat{\boldsymbol{w}} ^ {(tar)} = \Biggl\{ \sum_{i = 1}^{M} \overline{\gamma}_i ^ {(tar)} \boldsymbol{B}_i ^ \top {\boldsymbol{\Sigma}_i ^ {(yy)}} ^ {-1} \boldsymbol{B}_i \Biggr\} ^ {-1} \sum_{m = 1}^{M} \boldsymbol{B}_i ^ \top {\boldsymbol{\Sigma}_i ^ {(yy)}} ^ {-1} \overline{\boldsymbol{Y}}_i ^ {(tar)}
+</pre>
+</replace>
+<p>ただし、<replace idref="texinline-35"><pre>\overline{\gamma}_i ^ {(tar)}, \overline{\boldsymbol{Y}}_i ^ {(tar)}</pre></replace>は以下の通りである。</p>
+<replace idref="texblock-9">
+<pre>
+    \begin{split}
+                \overline{\gamma}_i ^ {(tar)} &amp; = \sum_{t = 1}^{T} P(m_i | \boldsymbol{Y}_t ^ {(tar)}, \boldsymbol{\lambda} ^ {(tar)}) \\
+        \overline{\boldsymbol{Y}}_i ^ {(tar)} &amp; = \sum_{t = 1}^{T} P(m_i | \boldsymbol{Y}_t ^ {(tar)}, \boldsymbol{\lambda} ^ {(tar)}) (\boldsymbol{Y}_t ^ {(tar)} - \boldsymbol{b}_i ^ {(0)})
+    \end{split}
+</pre>
+</replace>
+<p>以上を繰り返すことによって、<replace idref="texinline-36"><pre>\hat{\boldsymbol{w}} ^ {(tar)}</pre></replace>が求められる。ただし、<replace idref="texinline-37"><pre>\boldsymbol{\lambda} ^ {(tar)}</pre></replace>の初期パラメータとしては<replace idref="texinline-38"><pre>\boldsymbol{\lambda} ^ {(0)}</pre></replace>を用いるものとする。</p>
+<title aid:pstyle="h3">話者適応処理の実装</title><?dtp level="3" section="話者適応処理の実装"?>
+<p>話者適応処理はEVGMMのメソッドとして実装し、コンストラクタで求めた事前学習パラメータと引数として与えられる特徴量から適応済みパラメータを求めることとする。まずは、一対多の声質変換に関する適応処理を実装する。</p>
+<list type='emlist'><caption aid:pstyle='emlist-title'>一対多の声質変換に関する話者適応処理</caption>
+<pre>    def fit_target(self, target, epoch):
+        # P(m|Y)を算出するためのGMMインスタンスを生成する
+        py = GMM(n_components = M, covariance_type = 'full')
+        py.weights_ = self.weights
+        py.means_ = self.target_means
+        py.covars_ = self.covarYY
+
+        for x in xrange(epoch):
+            # P(m|Y)を算出する
+            predict = py.predict_proba(np.atleast_2d(target))
+            # Yを算出する
+            y = np.sum([predict[:, i: i + 1] * (target - self.biasvectors[1][i]) \
+                                                        for i in xrange(M)], axis = 1)
+            # γを算出する
+            gamma = np.sum(predict, axis = 0)
+
+            # 重みベクトルwを算出する
+            left = np.sum([gamma[i] * np.dot(self.eigenvectors[1][i].T, \
+                            np.linalg.solve(py.covars_, self.eigenvectors[1])[i]) \
+                                                        for i in xrange(M)], axis = 0)
+            right = np.sum([np.dot(self.eigenvectors[1][i].T, \
+                    np.linalg.solve(py.covars_, y)[i]) for i in xrange(M)], axis = 0)
+            weight = np.linalg.solve(left, right)
+
+            # 重みベクトルから平均出力ベクトルを求め、GMMのパラメータを更新する
+            self.fitted_target = np.dot(self.eigenvectors[1], weight) \
+                                                                + self.biasvectors[1]
+            py.means_ = self.fitted_target
+</pre></list>
+<p>同様にして、多対一の声質変換に関する適応処理を実装する。用いる固有ベクトルとバイアスベクトルを平均入力ベクトルによるものにすればよい。</p>
+<list type='emlist'><caption aid:pstyle='emlist-title'>多対一の声質変換に関する話者適応処理</caption>
+<pre>    def fit_source(self, source, epoch):
+        # P(m|X)を算出するためのGMMインスタンスを生成する
+        px = GMM(n_components = M, covariance_type = 'full')
+        px.weights_ = self.weights
+        px.means_ = self.source_means
+        px.covars_ = self.covarXX
+
+        for x in xrange(epoch):
+            # P(m|X)を算出する
+            predict = px.predict_proba(np.atleast_2d(source))
+            # Xを算出する
+            x = np.sum([predict[:, i: i + 1] * (source - self.biasvectors[0][i]) \
+                                                        for i in xrange(M)], axis = 1)
+            # γを算出する
+            gamma = np.sum(predict, axis = 0)
+
+            # 重みベクトルwを算出する
+            left = np.sum([gamma[i] * np.dot(self.eigenvectors[0][i].T, \
+                            np.linalg.solve(px.covars_, self.eigenvectors[0])[i]) \
+                                                        for i in xrange(M)], axis = 0)
+            right = np.sum([np.dot(self.eigenvectors[0][i].T, \
+                    np.linalg.solve(px.covars_, x)[i]) for i in xrange(M)], axis = 0)
+            weight = np.linalg.solve(left, right)
+
+            # 重みベクトルから平均入力ベクトルを求め、GMMのパラメータを更新する
+            self.fitted_source = np.dot(self.eigenvectors[0], weight) \
+                                                                + self.biasvectors[0]
+            px.means_ = self.fitted_source
+</pre></list>
+<title aid:pstyle="h2">6.4　固有声による声質変換処理</title><?dtp level="2" section="6.4　固有声による声質変換処理"?>
+<p>ここまでで、変換に必要なパラメータをすべて求めることができたので、変換処理を実装する。ここで注意したいのは、EVGMMで新たに実装した処理は変換のパラメータを求めるための処理であり、パラメータが求まった後の変換処理はこれまでと全く変わらないという点である。変換処理は、一対一の声質変換と同様に実装すればよい。</p>
+<title aid:pstyle="h3">変換処理の実装</title><?dtp level="3" section="変換処理の実装"?>
+<p>変換処理の実装は、第2章で紹介した実装とほとんど同じである。ただし、<replace idref="texinline-39"><pre>\boldsymbol{E}_{m, t}</pre></replace>を求める際に、平均ベクトルとして話者適応処理で得られたものを使う必要があるので、その部分のみ変更を加えている。</p>
+<p>ここまでの実装と合わせて、EVGMMクラス全体を載せておく。</p>
+<list type='emlist'><caption aid:pstyle='emlist-title'>EVGMMの実装</caption>
+<pre>class EVGMM(object):
+    def __init__(self, learn_data, swap = False):
+        &lt;省略&gt;
+
+    def fit(self, data, epoch = 1000):
+        if self.swap:
+            self.fit_source(data, epoch)
+        else:
+            self.fit_target(data, epoch)
+
+    def fit_source(self, source, epoch):
+        &lt;省略&gt;
+
+    def fit_target(self, target, epoch):
+        &lt;省略&gt;
+
+    def convert(self, source):
+        D = source.shape[0]
+
+        # 話者適応処理で得たパラメータからEを算出する
+        E = np.zeros((M, D))
+        for m in xrange(M):
+            xx = np.linalg.solve(self.covarXX[m], source - self.fitted_source[m])
+            E[m] = self.fitted_target[m] + np.dot(self.covarYX[m], xx)
+
+        px = GMM(n_components = M, covariance_type = 'full')
+        px.weights_ = self.weights
+        px.means_ = self.source_means
+        px.covars_ = self.covarXX
+
+        posterior = px.predict_proba(np.atleast_2d(source))
+        return np.dot(posterior, E)
+</pre></list>
+<title aid:pstyle="h3">トラジェクトリベースの変換処理の実装</title><?dtp level="3" section="トラジェクトリベースの変換処理の実装"?>
+<p>先ほど説明したように、EVGMMにおける変換処理は第2章で扱った変換手法とほとんど同じで、相違点は、平均ベクトルの代わりに話者適応で得られたパラメータを用いているのみである。つまり、学習や変換に用いる特徴量に動的特徴量を結合してやれば、全く同じようにトラジェクトリベースの声質変換を適用することができる。</p>
+<p>以下に、EVGMMクラスを継承して、トラジェクトリベースの声質変換を行うTrajectoryEVGMMクラスの実装を載せる。ただし、convertメソッドは<replace idref="texinline-40"><pre>\boldsymbol{E}_{m, t}</pre></replace>の導出以外は前章と変わらないので、該当部分以外は省略している。</p>
+<p>EVGMMとTrajectoryGMMの実装を合わせたevgmm.pyは以下の通りである。</p>
+<codelist>
+<caption>リスト6.2　evgmm.py</caption>
+<pre><span type='lineno'> 1: </span>#!/usr/bin/env python
+<span type='lineno'> 2: </span># coding: utf-8
+<span type='lineno'> 3: </span>
+<span type='lineno'> 4: </span>import numpy as np
+<span type='lineno'> 5: </span>
+<span type='lineno'> 6: </span>from sklearn.decomposition import PCA
+<span type='lineno'> 7: </span>from sklearn.mixture import GMM
+<span type='lineno'> 8: </span>
+<span type='lineno'> 9: </span>import scipy.sparse
+<span type='lineno'>10: </span>import scipy.sparse.linalg
+<span type='lineno'>11: </span>
+<span type='lineno'>12: </span>M = 32
+<span type='lineno'>13: </span>
+<span type='lineno'>14: </span>class EVGMM(object):
+<span type='lineno'>15: </span>    &lt;省略&gt;
+<span type='lineno'>16: </span>
+<span type='lineno'>17: </span>class TrajectoryEVGMM(EVGMM):
+<span type='lineno'>18: </span>    def __construct_weight_matrix(self, T, D):
+<span type='lineno'>19: </span>        &lt;省略&gt;
+<span type='lineno'>20: </span>
+<span type='lineno'>21: </span>    def convert(self, src):
+<span type='lineno'>22: </span>        &lt;省略&gt;
+<span type='lineno'>23: </span>
+<span type='lineno'>24: </span>        # 話者適応処理で得たパラメータからEを算出する
+<span type='lineno'>25: </span>        E = np.zeros((T, D * 2))
+<span type='lineno'>26: </span>        for t in range(T):
+<span type='lineno'>27: </span>            m = optimum_mix[t]
+<span type='lineno'>28: </span>            xx = np.linalg.solve(self.covarXX[m], src[t] - self.fitted_source[m])
+<span type='lineno'>29: </span>            E[t] = self.fitted_target[m] + np.dot(self.covarYX[m], xx)
+<span type='lineno'>30: </span>        E = E.flatten()
+<span type='lineno'>31: </span>
+<span type='lineno'>32: </span>        &lt;省略&gt;
+<span type='lineno'>33: </span>        return y.reshape((T, D))
+</pre></codelist>
+<p>最後に、変換先話者のSTFファイルを読み込んで話者適応をした後に、変換元話者の読み込んで変換処理を行い、結果をSTFファイルとして保存するという部分を実装する。ここでは、一対多か多対一かを実行時引数の数で判定している。というのも、一対多の場合は話者適応のために変換先話者の特徴量が必要だが、多対一の場合は変換に用いる変換元話者の特徴量で話者適応も行うことができるからである。</p>
+<codelist>
+<caption>リスト6.3　convert_trajevgmm.py</caption>
+<pre><span type='lineno'> 1: </span>#!/usr/bin/env python
+<span type='lineno'> 2: </span>
+<span type='lineno'> 3: </span>import math
+<span type='lineno'> 4: </span>import numpy
+<span type='lineno'> 5: </span>import pickle
+<span type='lineno'> 6: </span>import sklearn
+<span type='lineno'> 7: </span>import sys
+<span type='lineno'> 8: </span>
+<span type='lineno'> 9: </span>from evgmm import GMM
+<span type='lineno'>10: </span>
+<span type='lineno'>11: </span>from stf import STF
+<span type='lineno'>12: </span>from mfcc import MFCC
+<span type='lineno'>13: </span>from dtw import DTW
+<span type='lineno'>14: </span>
+<span type='lineno'>15: </span>D = 16
+<span type='lineno'>16: </span>
+<span type='lineno'>17: </span>if __name__ == '__main__':
+<span type='lineno'>18: </span>    if len(sys.argv) &lt; 5:
+<span type='lineno'>19: </span>        print 'Usage: %s [gmmmap] [f0] [source speaker stf] ' + \
+<span type='lineno'>20: </span>                                (target speaker stf) [output]' % sys.argv[0]
+<span type='lineno'>21: </span>        sys.exit()
+<span type='lineno'>22: </span>
+<span type='lineno'>23: </span>    with open(sys.argv[1], 'rb') as infile:
+<span type='lineno'>24: </span>        evgmm = pickle.load(infile)
+<span type='lineno'>25: </span>
+<span type='lineno'>26: </span>    with open(sys.argv[2], 'rb') as infile:
+<span type='lineno'>27: </span>        f0 = pickle.load(infile)
+<span type='lineno'>28: </span>
+<span type='lineno'>29: </span>    source = STF()
+<span type='lineno'>30: </span>    source.loadfile(sys.argv[3])
+<span type='lineno'>31: </span>
+<span type='lineno'>32: </span>    mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = D)
+<span type='lineno'>33: </span>    source_mfcc = numpy.array([mfcc.mfcc(source.SPEC[frame]) \
+<span type='lineno'>34: </span>                                    for frame in xrange(source.SPEC.shape[0])])
+<span type='lineno'>35: </span>    source_data = numpy.hstack([source_mfcc, mfcc.delta(source_mfcc)])
+<span type='lineno'>36: </span>
+<span type='lineno'>37: </span>    if len(sys.argv) == 5:
+<span type='lineno'>38: </span>        evgmm.fit(source_data)
+<span type='lineno'>39: </span>    else:
+<span type='lineno'>40: </span>        target = STF()
+<span type='lineno'>41: </span>        target.loadfile(sys.argv[4])
+<span type='lineno'>42: </span>
+<span type='lineno'>43: </span>        mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency, dimension = D)
+<span type='lineno'>44: </span>        target_mfcc = numpy.array([mfcc.mfcc(target.SPEC[frame]) \
+<span type='lineno'>45: </span>                                    for frame in xrange(target.SPEC.shape[0])])
+<span type='lineno'>46: </span>        target_data = numpy.hstack([target_mfcc, mfcc.delta(target_mfcc)])
+<span type='lineno'>47: </span>
+<span type='lineno'>48: </span>        evgmm.fit(target_data)
+<span type='lineno'>49: </span>
+<span type='lineno'>50: </span>    output_mfcc = evgmm.convert(source_data)
+<span type='lineno'>51: </span>    output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame]) \
+<span type='lineno'>52: </span>                                    for frame in xrange(output_mfcc.shape[0])])
+<span type='lineno'>53: </span>
+<span type='lineno'>54: </span>    source.SPEC = output_spec
+<span type='lineno'>55: </span>    source.F0[source.F0 != 0] = numpy.exp((numpy.log(source.F0[source.F0 != 0]) - \
+<span type='lineno'>56: </span>                                        f0[0][0]) * f0[1][1] / f0[1][0] + f0[0][1])
+<span type='lineno'>57: </span>
+<span type='lineno'>58: </span>    if len(sys.argv) == 5:
+<span type='lineno'>59: </span>        source.savefile(sys.argv[4])
+<span type='lineno'>60: </span>    else:
+<span type='lineno'>61: </span>        source.savefile(sys.argv[5])
+</pre></codelist>
+<title aid:pstyle="h2">6.5　固有声に基づく多対多声質変換</title><?dtp level="2" section="6.5　固有声に基づく多対多声質変換"?>
+<p>ここまでで扱った多対一と一対多の声質変換を組み合わせることによって、多対多の声質変換を実現することができる。つまり、任意の話者の発話データを多対一変換にて特定の話者に変換し、一対多変換によってその特定の話者から任意の話者へと変換することができる。この仕組みを図で表すと以下のようになる。</p>
+<img>
+<Image href="file://images/ref-evgmm.png" scale="0.29" />
+<caption>図6.2　多対一変換及び一対多変換を組み合わせた多対多声質変換の仕組み(<span type='bibref' idref='ref-evgmm'>[9]</span>より引用)</caption>
+</img>
+<p>紙面と締め切りの都合上、詳細な説明は割愛するが、詳しくは「Many-to-many eigenvoice conversion with reference voice<span type='bibref' idref='ref-evgmm'>[9]</span>」という論文を参照してほしい。</p>
+<title aid:pstyle="h2">6.6　固有声に基づく声質変換の変換処理の結果</title><?dtp level="2" section="6.6　固有声に基づく声質変換の変換処理の結果"?>
+<p>以下の画像は、固有声に基づく多対一の声質変換の結果を表したグラフである。前章と同様に、それぞれのグラフはMFCCの第1次係数(数値が小さい方)及び第2次係数(数値が大きい方)の推移を表しており、上から、変換先話者のデータ、変換元話者と変換先話者のパラレルデータを用いずに固有声に基づく多対一変換を行ったデータ、パラレルデータを用いて一対一変換を行ったデータをDTWによって伸縮させたものである。</p>
+<img>
+<Image href="file://images/evgmm-result.png" scale="0.6" />
+<caption>図6.3　多対一の声質変換処理と一対一の声質変換処理の結果データの比較</caption>
+</img>
+<p>ここでは、モデルの学習に11人の事前学習用入力話者についてそれぞれ10文のパラレルデータを用いた。また、話者適応には1文のみ、変換元の特徴量をそのまま用いた。図を見るとわかるように、パラレルデータを用いた一対一の声質変換に比べても遜色ない精度で変換出来ていることがわかる。</p>
+<p>しかし、MFCCの第2次係数を見ると、多対一変換においては推移が滑らかになりすぎていることがわかる。これは過剰な平滑化と呼ばれる現象で、GMMをベースとした声質変換の1つの問題点である。これを解決する手法としては、系列内変動(Global Variance)や変調スペクトル(Modulation Spectrum)といった仕組みが考案されているが、ここでは説明を割愛する。</p>
+</doc>

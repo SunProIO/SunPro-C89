@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doc xmlns:aid="http://ns.adobe.com/AdobeInDesign/4.0/"><title aid:pstyle="h1">第4章　混合ガウスモデルによる声質変換</title><?dtp level="1" section="第4章　混合ガウスモデルによる声質変換"?>
+<p>この章では、GMMを用いた最も基本的な声質変換の解説及び実装を行う。なお、声質変換の手法については、戸田氏の論文「Voice Conversion Based on Maximum Likelihood Estimation of Spectral Parameter Trajectory<span type='bibref' idref='toda-traj'>[6]</span>」を、実装については、r9y9氏のブログ<span type='bibref' idref='r9y9-gmm'>[7]</span>を大いに参照した。</p>
+<title aid:pstyle="h2">4.1　混合ガウスモデルの学習処理</title><?dtp level="2" section="4.1　混合ガウスモデルの学習処理"?>
+<p>学習の処理はかなり単純である。変換元の特徴量と変換先の特徴量を各フレームごとに結合して得られるデータに対して、学習処理を行ってGMMのパラメータを推定する。つまり、<replace idref="texinline-1"><pre>\boldsymbol{x}_t, \boldsymbol{y}_t</pre></replace>をそれぞれ<replace idref="texinline-2"><pre>t</pre></replace>番目のフレームにおける変換元、変換先の特徴量とすると、<replace idref="texinline-3"><pre>\boldsymbol{z}_t = \left [ \boldsymbol{x}_t ^ \top, \boldsymbol{y}_t ^ \top \right ] ^ \top</pre></replace>を学習データとして用いることとなる。ここで、特徴量として<replace idref="texinline-4"><pre>D</pre></replace>次元のMFCCを用いるとすると、学習データは<replace idref="texinline-5"><pre>2D</pre></replace>次元となる。式で表すと以下のようになる。</p>
+<replace idref="texblock-1">
+<pre>
+    \begin{gathered}
+        P(\boldsymbol{z}_t | \boldsymbol{\lambda} ^ {(z)}) = \sum_{m = 1}^{M} w_l \mathcal{N} (\boldsymbol{z}_t; \boldsymbol{\mu}_m ^ {(z)}, \boldsymbol{\Sigma}_m ^ {(z)}) \\
+        \hat{\boldsymbol{\lambda}} ^ {(z)} = \underset{\boldsymbol{\lambda} ^ {(z)}}{argmax} \prod_{t = 1}^{T} P(\boldsymbol{z}_t, \boldsymbol{\lambda} ^ {(z)})
+    \end{gathered}
+</pre>
+</replace>
+<p>ここで、<replace idref="texinline-6"><pre>\boldsymbol{z}_t</pre></replace>は、<replace idref="texinline-7"><pre>\boldsymbol{x}_t, \boldsymbol{y}_t</pre></replace>の結合特徴量であることから、平均ベクトルと分散共分散行列は以下のように表すことができる。</p>
+<replace idref="texblock-2">
+<pre>
+    \boldsymbol{\mu}_m ^ {(z)} =
+        \begin{bmatrix}
+            \boldsymbol{\mu}_m ^ {(x)} \\
+            \boldsymbol{\mu}_m ^ {(y)}
+        \end{bmatrix},
+    \boldsymbol{\Sigma}_m ^ {(z)} =
+        \begin{bmatrix}
+            \boldsymbol{\Sigma}_m ^ {(xx)} &amp; \boldsymbol{\Sigma}_m ^ {(xy)} \\
+            \boldsymbol{\Sigma}_m ^ {(yx)} &amp; \boldsymbol{\Sigma}_m ^ {(yy)}
+        \end{bmatrix}
+</pre>
+</replace>
+<p><replace idref="texinline-8"><pre>\boldsymbol{\mu}_m ^ {(x)}, \boldsymbol{\mu}_m ^ {(y)}</pre></replace>は、それぞれ<replace idref="texinline-9"><pre>m</pre></replace>番目のガウス分布における変換元、変換先の平均ベクトルを意味し、<replace idref="texinline-10"><pre>\boldsymbol{\Sigma}_m ^ {(xx)}, \boldsymbol{\Sigma}_m ^ {(yy)}</pre></replace>は、それぞれ<replace idref="texinline-11"><pre>m</pre></replace>番目のガウス分布における変換元、変換先の分散共分散行列、そして<replace idref="texinline-12"><pre>\boldsymbol{\Sigma}_m ^ {(xy)}, \boldsymbol{\Sigma}_m ^ {(yx)}</pre></replace>は、それぞれ変換元、変換先間の相互共分散行列と表している。</p>
+<p>これは、学習したパラメータをプロットしてみるとよく分かる。以下の図は、変換元、変換先の特徴量をそれぞれ16次元のMFCCとして、混合数32のGMMで学習した際の平均ベクトルをプロットしたものである。縦軸が混合数、横軸が特徴量の次元であり、左半分が<replace idref="texinline-13"><pre>\boldsymbol{\mu}_m ^ {(x)}</pre></replace>、右半分が<replace idref="texinline-14"><pre>\boldsymbol{\mu}_m ^ {(y)}</pre></replace>を表しているが、大まかに似たような分布になっていることが分かる。</p>
+<img>
+<Image href="file://images/gmm-mean.png" scale="0.5" />
+<caption>図4.1　学習したGMMの平均ベクトル</caption>
+</img>
+<p>以下の図は、同様にして得られた分散共分散行列のうち、1番目と2番目のガウス分布のものをプロットしたものである。4つの領域で同様の分布になっており、さらにそれぞれが対称行列のようになっていることがわかる。</p>
+<img>
+<Image href="file://images/gmm-covar.png" scale="0.5" />
+<caption>図4.2　学習したGMMの分散共分散行列</caption>
+</img>
+<title aid:pstyle="h3">学習処理の実装</title><?dtp level="3" section="学習処理の実装"?>
+<p>GMMMapというクラスに学習済みGMMインスタンスを与えることによって変換処理を行うインスタンスを作るものとして、まず複数のSTFデータを読みこんで、結合特徴量を作り、GMMに学習させる処理までを実装する。</p>
+<p>GMMの学習処理には、scikit-learnのGMM実装であるsklearn.mixture.GMMを用いる。ここで、気をつけるべきポイントはコンストラクタに<tt type='inline-code'>covariance_type = 'full'</tt>を指定するという点である。scikit-learnは、デフォルトではパラメータの学習の際に、分散共分散行列を対角行列に制限することで計算量を削減しているが、より自然な音声を生成するにはその制約を用いずに行列をすべて更新するのがよい。</p>
+<p>また、学習結果はPythonのpickleモジュールを利用してシリアライズし、保存することとする。同様に、DTWはフレーム数に比例して計算量が大きくなるが、同じ音声データに対してのDTWの結果は常に一致することから、計算結果をpickleでキャッシュすることができる。</p>
+<p>実装したソースは、以下の通りである。特に複雑な処理を実装しているわけではないので、詳細についてはコメントを参照していただきたい。</p>
+<codelist>
+<caption>リスト4.1　learn_gmmmap.py</caption>
+<pre><span type='lineno'> 1: </span>#!/usr/bin/env python
+<span type='lineno'> 2: </span>
+<span type='lineno'> 3: </span>import math
+<span type='lineno'> 4: </span>import numpy
+<span type='lineno'> 5: </span>import os
+<span type='lineno'> 6: </span>import pickle
+<span type='lineno'> 7: </span>import re
+<span type='lineno'> 8: </span>import sklearn
+<span type='lineno'> 9: </span>import sklearn.mixture
+<span type='lineno'>10: </span>import sys
+<span type='lineno'>11: </span>
+<span type='lineno'>12: </span>from gmmmap import GMMMap
+<span type='lineno'>13: </span>
+<span type='lineno'>14: </span>from stf import STF
+<span type='lineno'>15: </span>from mfcc import MFCC
+<span type='lineno'>16: </span>from dtw import DTW
+<span type='lineno'>17: </span>
+<span type='lineno'>18: </span>D = 16  # 利用するMFCCの次元数
+<span type='lineno'>19: </span>M = 32  # GMMの混合数
+<span type='lineno'>20: </span>
+<span type='lineno'>21: </span>if __name__ == '__main__':
+<span type='lineno'>22: </span>    if len(sys.argv) &lt; 5:
+<span type='lineno'>23: </span>        print ('Usage: %s [list of source stf] [list of target stf] ' + \
+<span type='lineno'>24: </span>                            '[dtw cache directory] [output file]') % sys.argv[0]
+<span type='lineno'>25: </span>        sys.exit()
+<span type='lineno'>26: </span>
+<span type='lineno'>27: </span>    # 対応するSTFファイルのパスが同じ行に書かれたリストを入力として受け取る
+<span type='lineno'>28: </span>    source_list = open(sys.argv[1]).read().strip().split('\n')
+<span type='lineno'>29: </span>    target_list = open(sys.argv[2]).read().strip().split('\n')
+<span type='lineno'>30: </span>
+<span type='lineno'>31: </span>    assert len(source_list) == len(target_list)
+<span type='lineno'>32: </span>
+<span type='lineno'>33: </span>    learn_data = None
+<span type='lineno'>34: </span>
+<span type='lineno'>35: </span>    for i in xrange(len(source_list)):
+<span type='lineno'>36: </span>        # 変換元のSTFを読み取る
+<span type='lineno'>37: </span>        source = STF()
+<span type='lineno'>38: </span>        source.loadfile(source_list[i])
+<span type='lineno'>39: </span>
+<span type='lineno'>40: </span>        # 変換元のスペクトル包絡から各フレームごとにMFCCを計算する
+<span type='lineno'>41: </span>        mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = D)
+<span type='lineno'>42: </span>        source_mfcc = numpy.array([mfcc.mfcc(source.SPEC[frame]) \
+<span type='lineno'>43: </span>                                    for frame in xrange(source.SPEC.shape[0])])
+<span type='lineno'>44: </span>
+<span type='lineno'>45: </span>        # 変換先のSTFを読み取る
+<span type='lineno'>46: </span>        target = STF()
+<span type='lineno'>47: </span>        target.loadfile(target_list[i])
+<span type='lineno'>48: </span>
+<span type='lineno'>49: </span>        # 変換先のスペクトル包絡から各フレームごとにMFCCを計算する
+<span type='lineno'>50: </span>        mfcc = MFCC(target.SPEC.shape[1] * 2, target.frequency, dimension = D)
+<span type='lineno'>51: </span>        target_mfcc = numpy.array([mfcc.mfcc(target.SPEC[frame]) \
+<span type='lineno'>52: </span>                                    for frame in xrange(target.SPEC.shape[0])])
+<span type='lineno'>53: </span>
+<span type='lineno'>54: </span>        # DTWのキャッシュが存在しない場合はDPマッチングの計算処理を行う
+<span type='lineno'>55: </span>        cache_path = os.path.join(sys.argv[3], '%s_%s.dtw' % \
+<span type='lineno'>56: </span>            tuple(map(lambda x: re.sub('[./]', '_', re.sub('^[./]*', '', x)), \
+<span type='lineno'>57: </span>                                            [source_list[i], target_list[i]])))
+<span type='lineno'>58: </span>        if os.path.exists(cache_path):
+<span type='lineno'>59: </span>            dtw = pickle.load(open(cache_path))
+<span type='lineno'>60: </span>        else:
+<span type='lineno'>61: </span>            dtw = DTW(source_mfcc, target_mfcc, \
+<span type='lineno'>62: </span>                    window = abs(source.SPEC.shape[0] - target.SPEC.shape[0]) * 2)
+<span type='lineno'>63: </span>            with open(cache_path, 'wb') as output:
+<span type='lineno'>64: </span>                pickle.dump(dtw, output)
+<span type='lineno'>65: </span>
+<span type='lineno'>66: </span>        # DTWにより変換元のMFCCのフレーム数を変換先と合わせる
+<span type='lineno'>67: </span>        warp_mfcc = dtw.align(source_mfcc)
+<span type='lineno'>68: </span>
+<span type='lineno'>69: </span>        # 変換元と変換先のMFCCを結合し、各フレームごとに2D次元の特徴量となるようにする
+<span type='lineno'>70: </span>        data = numpy.hstack([warp_mfcc, target_mfcc])
+<span type='lineno'>71: </span>        # STFファイルごとの結合特徴量を時間方向に繋げて1つの行列とする
+<span type='lineno'>72: </span>        if learn_data is None:
+<span type='lineno'>73: </span>            learn_data = data
+<span type='lineno'>74: </span>        else:
+<span type='lineno'>75: </span>            learn_data = numpy.vstack([learn_data, data])
+<span type='lineno'>76: </span>
+<span type='lineno'>77: </span>    # GMMの学習処理を行う
+<span type='lineno'>78: </span>    gmm = sklearn.mixture.GMM(n_components = M, covariance_type = 'full')
+<span type='lineno'>79: </span>    gmm.fit(learn_data)
+<span type='lineno'>80: </span>    gmmmap = GMMMap(gmm)
+<span type='lineno'>81: </span>
+<span type='lineno'>82: </span>    # 学習済みインスタンスをpickleでシリアライズする
+<span type='lineno'>83: </span>    with open(sys.argv[4], 'wb') as output:
+<span type='lineno'>84: </span>        pickle.dump(gmmmap, output)
+</pre></codelist>
+<title aid:pstyle="h2">4.2　混合ガウスモデルによる変換処理</title><?dtp level="2" section="4.2　混合ガウスモデルによる変換処理"?>
+<p>変換処理は、入力として変換元の特徴量<replace idref="texinline-15"><pre>\boldsymbol{x}_t</pre></replace>が与えられた時の、変換後の特徴量の条件付き確率密度関数<replace idref="texinline-16"><pre>P(\boldsymbol{y}_t | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)})</pre></replace>を求め、それが最大化されるような<replace idref="texinline-17"><pre>\boldsymbol{y}_t</pre></replace>を求めることによって行われる。</p>
+<p>ここで、</p>
+<replace idref="texblock-3">
+<pre>
+    P(\boldsymbol{y}_t | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)}) = \sum_{m = 1}^{M} P(m | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)}) P(\boldsymbol{y}_t | \boldsymbol{x}_t, m, \boldsymbol{\lambda} ^ {(z)})
+</pre>
+</replace>
+<p>となるが、ここで<replace idref="texinline-18"><pre>P(m | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)})</pre></replace>は事後確率として以下のように導出できる。</p>
+<replace idref="texblock-4">
+<pre>
+    P(m | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)}) = \frac{ w_m \mathcal{N}(\boldsymbol{x}_t; \boldsymbol{\mu}_m ^ {(z)}, \boldsymbol{\Sigma}_m ^ {(z)}) }{ \sum_{n = 1}^{M} w_n \mathcal{N}(\boldsymbol{x}_t, \boldsymbol{\mu}_n ^ {(z)}, \boldsymbol{\Sigma}_n ^ {(z)}) }
+</pre>
+</replace>
+<p>さらに、<replace idref="texinline-19"><pre>P(\boldsymbol{y}_t | \boldsymbol{x}_t, m, \boldsymbol{\lambda} ^ {(z)})</pre></replace>もGMMでモデル化することができ、その平均ベクトル<replace idref="texinline-20"><pre>\boldsymbol{E}_{m, t} ^ {(y)}</pre></replace>及び分散共分散行列<replace idref="texinline-21"><pre>\boldsymbol{D}_m^{(y)}</pre></replace>は以下のように表される<footnote>この平均ベクトル・分散共分散行列の導出については、「パターン認識と機械学習」の「2.3.1 条件付きガウス分布」を参照されたい。</footnote>。</p>
+<replace idref="texblock-5">
+<pre>
+    \begin{gathered}
+        \boldsymbol{E}_{m, t} ^ {(y)} = \boldsymbol{\mu}_m ^ {(y)} + \boldsymbol{\Sigma}_m ^ {(yx)} {\boldsymbol{\Sigma}_m ^ {(xx)}} ^ {-1} (\boldsymbol{x}_t - \boldsymbol{\mu}_m ^ {(x)}) \\
+        \boldsymbol{D}_m ^ {(y)} = \boldsymbol{\Sigma}_m ^ {(yy)} + \boldsymbol{\Sigma}_m ^ {(yx)} {\boldsymbol{\Sigma}_m ^ {(xx)}} ^ {-1} \boldsymbol{\Sigma}_m ^ {(xy)}
+    \end{gathered}
+</pre>
+</replace>
+<p>このとき、最小平均二乗誤差推定(MMSE)によって変換後の特徴量を求めるならば、推定される特徴量を<replace idref="texinline-22"><pre>\hat{\boldsymbol{y}_t}</pre></replace>として、以下の通りとなる。</p>
+<replace idref="texblock-6">
+<pre>
+    \hat{\boldsymbol{y}_t} = E[\boldsymbol{y}_t | \boldsymbol{x}_t] = \int P(\boldsymbol{y}_t | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)}) \boldsymbol{y}_t d \boldsymbol{y}_t
+</pre>
+</replace>
+<p>これに、得られた<replace idref="texinline-23"><pre>P(\boldsymbol{y}_t | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)})</pre></replace>を代入する。</p>
+<replace idref="texblock-7">
+<pre>
+    \begin{split}
+        \int P(\boldsymbol{y}_t | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)}) \boldsymbol{y}_t d \boldsymbol{y}_t
+                = &amp; \int \sum_{m = 1}^{M} P(m | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)}) P(\boldsymbol{y}_t | \boldsymbol{x}_t, m, \boldsymbol{\lambda} ^ {(z)}) \boldsymbol{y}_t d \boldsymbol{y}_t \\
+                = &amp; \sum_{m = 1}^{M} P(m | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)}) \int \mathcal{N}(\boldsymbol{x}_t, \boldsymbol{\mu}_n ^ {(z)}, \boldsymbol{\Sigma}_n ^ {(z)}) \boldsymbol{y}_t d \boldsymbol{y}_t \\
+                = &amp; \sum_{m = 1}^{M} P(m | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)}) \boldsymbol{E}_{m, t} ^ {(y)}
+    \end{split}
+</pre>
+</replace>
+<p>以上より、<replace idref="texinline-24"><pre>P(m | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)})</pre></replace>と<replace idref="texinline-25"><pre>\boldsymbol{E}_{m, t} ^ {(y)}</pre></replace>の算出を実装すれば変換処理ができることがわかる。</p>
+<title aid:pstyle="h3">変換処理の実装</title><?dtp level="3" section="変換処理の実装"?>
+<p>変換処理についても、学習処理と同じくコメントにて解説を入れる。基本的な構造としては、コンストラクタで学習済みのGMMを引数として取り、変換元データと独立な部分を算出した後、convertメソッドで変換元データを引数として取って、変換処理を行う。</p>
+<p>1つ注意すべきポイントは、<replace idref="texinline-26"><pre>P(m | \boldsymbol{x}_t, \boldsymbol{\lambda} ^ {(z)})</pre></replace>の算出を、前章の定義をそのまま実装するのではなく、sklearn.mixture.GMMのpredict_probaメソッドを用いて行っているという点である。このpredict_probaメソッドではGMMから事後確率を計算することができるので、コンストラクタ内で<replace idref="texinline-27"><pre>\boldsymbol{\mu}_m ^ {(x)}</pre></replace>を平均ベクトル、<replace idref="texinline-28"><pre>\boldsymbol{\Sigma}_m ^ {(xx)}</pre></replace>を分散共分散行列とするGMMインスタンスを作成している。</p>
+<p>また、sklearn.mixture.GMMでは、それぞれのガウス分布の平均ベクトルと分散共分散行列をまとめて多次元配列として扱っているということも把握しておく必要がある。つまり、平均ベクトルは<replace idref="texinline-29"><pre>M \times 2D</pre></replace>次元、分散共分散行列は<replace idref="texinline-30"><pre>M \times 2D \times 2D</pre></replace>次元の配列となっている。</p>
+<codelist>
+<caption>リスト4.2　gmmmap.py</caption>
+<pre><span type='lineno'> 1: </span>#!/usr/bin/python
+<span type='lineno'> 2: </span># coding: utf-8
+<span type='lineno'> 3: </span>
+<span type='lineno'> 4: </span>import numpy as np
+<span type='lineno'> 5: </span>from sklearn.mixture import GMM
+<span type='lineno'> 6: </span>
+<span type='lineno'> 7: </span>class GMMMap(object):
+<span type='lineno'> 8: </span>    def __init__(self, gmm, swap = False):
+<span type='lineno'> 9: </span>        # GMMの学習に用いられるのは結合特徴量なので、その半分がMFCCの次元数となる
+<span type='lineno'>10: </span>        self.M, D = gmm.means_.shape[0], gmm.means_.shape[1] / 2
+<span type='lineno'>11: </span>        self.weights = gmm.weights_
+<span type='lineno'>12: </span>
+<span type='lineno'>13: </span>        # 学習済みGMMの平均ベクトルをxとyに分ける
+<span type='lineno'>14: </span>        self.src_means = gmm.means_[:, :D]
+<span type='lineno'>15: </span>        self.tgt_means = gmm.means_[:, D:]
+<span type='lineno'>16: </span>
+<span type='lineno'>17: </span>        # 学習済みGMMの分散共分散行列をxx, xy, yx, yyの4つに分ける
+<span type='lineno'>18: </span>        self.covarXX = gmm.covars_[:, :D, :D]
+<span type='lineno'>19: </span>        self.covarXY = gmm.covars_[:, :D, D:]
+<span type='lineno'>20: </span>        self.covarYX = gmm.covars_[:, D:, :D]
+<span type='lineno'>21: </span>        self.covarYY = gmm.covars_[:, D:, D:]
+<span type='lineno'>22: </span>
+<span type='lineno'>23: </span>        # GMMの学習時と逆に変換先の話者から変換元の話者へと変換する場合は
+<span type='lineno'>24: </span>        # 平均ベクトルと分散共分散行列を逆に扱えばよい
+<span type='lineno'>25: </span>        if swap:
+<span type='lineno'>26: </span>            self.tgt_means, self.src_means = self.src_means, self.tgt_means
+<span type='lineno'>27: </span>            self.covarYY, self.covarXX = self.covarXX, self.covarYY
+<span type='lineno'>28: </span>            self.covarYX, self.covarXY = self.covarXY, self.covarYX
+<span type='lineno'>29: </span>
+<span type='lineno'>30: </span>        # 事後確率の計算のために、それぞれのガウス分布の重みはそのままで
+<span type='lineno'>31: </span>        # xの平均ベクトルとxxの分散共分散行列を用いたGMMのインスタンスを生成する
+<span type='lineno'>32: </span>        self.px = GMM(n_components = self.M, covariance_type = &quot;full&quot;)
+<span type='lineno'>33: </span>        self.px.means_ = self.src_means
+<span type='lineno'>34: </span>        self.px.covars_ = self.covarXX
+<span type='lineno'>35: </span>        self.px.weights_ = self.weights
+<span type='lineno'>36: </span>
+<span type='lineno'>37: </span>    def convert(self, src):
+<span type='lineno'>38: </span>        D = len(src)
+<span type='lineno'>39: </span>
+<span type='lineno'>40: </span>        # ベクトルEをすべてのガウス分布についてまとめて計算する
+<span type='lineno'>41: </span>        E = np.zeros((self.M, D))
+<span type='lineno'>42: </span>        for m in range(self.M):
+<span type='lineno'>43: </span>            # 逆行列に行列を掛け合わせる処理はnumpy.linalg.solveを使うと高速である
+<span type='lineno'>44: </span>            xx = np.linalg.solve(self.covarXX[m], src - self.src_means[m])
+<span type='lineno'>45: </span>            E[m] = self.tgt_means[m] + self.covarYX[m].dot(xx.transpose())
+<span type='lineno'>46: </span>
+<span type='lineno'>47: </span>        # 事後確率P(m|x)を計算する
+<span type='lineno'>48: </span>        posterior = self.px.predict_proba(np.atleast_2d(src))
+<span type='lineno'>49: </span>
+<span type='lineno'>50: </span>        # 事後確率とEの積が求める特徴量となる
+<span type='lineno'>51: </span>        return posterior.dot(E)
+</pre></codelist>
+<title aid:pstyle="h2">4.3　変換特徴量から音声データへの変換</title><?dtp level="2" section="4.3　変換特徴量から音声データへの変換"?>
+<p>ここまでで、GMMを用いて特徴量を変換することはできたが、最後に得られた特徴量を音声データへと変換する処理を実装する必要がある。GMMによって変換される特徴量はMFCCなので、スペクトル包絡へと逆変換した後に、変換元データとして与えられたSTFファイルのスペクトル包絡を上書きして保存する。そして、TANDEM-STRAIGHTによって、変換後のSTFファイルを音声データへと変換する。</p>
+<p>この時に、F0周波数も変換することで、より変換先の話者に似せることができる。F0の変換については、複雑な処理は行わずに以下のように線形変換をする。</p>
+<replace idref="texblock-8">
+<pre>
+    \hat{\boldsymbol{y}_t} = \frac{\rho ^ {(y)}}{\rho ^ {(x)}} (\boldsymbol{x}_t - \mu ^ {(x)}) + \mu ^ {(y)}
+</pre>
+</replace>
+<p>ここで、<replace idref="texinline-31"><pre>\boldsymbol{x}_t, \boldsymbol{y}_t</pre></replace>は対数尺度での変換元、変換先のF0周波数とし、<replace idref="texinline-32"><pre>\mu ^ {(x)}, \rho ^ {(x)}</pre></replace>はそれぞれ変換元の対数F0周波数の平均及び標準偏差、同様に、<replace idref="texinline-33"><pre>\mu ^ {(y)}, \rho ^ {(y)}</pre></replace>はそれぞれ変換先の対数F0周波数の平均及び標準偏差とする。これもスペクトル包絡と同様に、変換元STFのF0データを変換したデータで上書きする。</p>
+<title aid:pstyle="h3">F0変換パラメータの算出処理</title><?dtp level="3" section="F0変換パラメータの算出処理"?>
+<p>まず、F0の変換に用いる、対数F0周波数の平均と標準偏差の算出処理を実装する。算出に用いるSTFファイルが1つとは限らないので、ファイルごとに対数F0周波数の平均と二乗平均を更新していき、最後に二乗平均と平均の二乗の差の平方根を取ることで標準偏差を算出している。</p>
+<p>算出結果は、タプルとしてpickleでシリアライズして保存する。</p>
+<codelist>
+<caption>リスト4.3　learn_f0.py</caption>
+<pre><span type='lineno'> 1: </span>#!/usr/bin/env python
+<span type='lineno'> 2: </span>
+<span type='lineno'> 3: </span>import math
+<span type='lineno'> 4: </span>import numpy
+<span type='lineno'> 5: </span>import pickle
+<span type='lineno'> 6: </span>import sklearn
+<span type='lineno'> 7: </span>import sys
+<span type='lineno'> 8: </span>
+<span type='lineno'> 9: </span>from stf import STF
+<span type='lineno'>10: </span>from mfcc import MFCC
+<span type='lineno'>11: </span>from dtw import DTW
+<span type='lineno'>12: </span>
+<span type='lineno'>13: </span>if __name__ == '__main__':
+<span type='lineno'>14: </span>    if len(sys.argv) &lt; 4:
+<span type='lineno'>15: </span>        print 'Usage: %s [list of source stf] ' + \
+<span type='lineno'>16: </span>                '[list of target stf] [output file]' % sys.argv[0]
+<span type='lineno'>17: </span>        sys.exit()
+<span type='lineno'>18: </span>
+<span type='lineno'>19: </span>    source_list = open(sys.argv[1]).read().strip().split('\n')
+<span type='lineno'>20: </span>    target_list = open(sys.argv[2]).read().strip().split('\n')
+<span type='lineno'>21: </span>
+<span type='lineno'>22: </span>    assert len(source_list) == len(target_list)
+<span type='lineno'>23: </span>
+<span type='lineno'>24: </span>    f0_count = [0, 0]
+<span type='lineno'>25: </span>    f0_mean = [0.0, 0.0]
+<span type='lineno'>26: </span>    f0_square_mean = [0.0, 0.0]
+<span type='lineno'>27: </span>
+<span type='lineno'>28: </span>    for i in xrange(len(source_list)):
+<span type='lineno'>29: </span>        source = STF()
+<span type='lineno'>30: </span>        source.loadfile(source_list[i])
+<span type='lineno'>31: </span>
+<span type='lineno'>32: </span>        target = STF()
+<span type='lineno'>33: </span>        target.loadfile(target_list[i])
+<span type='lineno'>34: </span>
+<span type='lineno'>35: </span>        for idx, stf in enumerate([source, target]):
+<span type='lineno'>36: </span>            count = (stf.F0 != 0).sum()
+<span type='lineno'>37: </span>            f0_mean[idx] = (f0_mean[idx] * f0_count[idx] + \
+<span type='lineno'>38: </span>                    numpy.log(stf.F0[stf.F0 != 0]).sum()) / (f0_count[idx] + count)
+<span type='lineno'>39: </span>            f0_square_mean[idx] = (f0_square_mean[idx] * f0_count[idx] + \
+<span type='lineno'>40: </span>                    (numpy.log(stf.F0[stf.F0 != 0]) ** 2).sum()) / \
+<span type='lineno'>41: </span>                    (f0_count[idx] + count)
+<span type='lineno'>42: </span>            f0_count[idx] += count
+<span type='lineno'>43: </span>
+<span type='lineno'>44: </span>    f0_deviation = [math.sqrt(f0_square_mean[i] - f0_mean[i] ** 2) \
+<span type='lineno'>45: </span>                                                    for i in xrange(2)]
+<span type='lineno'>46: </span>    f0 = (tuple(f0_mean), tuple(f0_deviation))
+<span type='lineno'>47: </span>
+<span type='lineno'>48: </span>    print f0
+<span type='lineno'>49: </span>    output = open(sys.argv[3], 'wb')
+<span type='lineno'>50: </span>    pickle.dump(f0, output)
+<span type='lineno'>51: </span>    output.close()
+</pre></codelist>
+<title aid:pstyle="h3">STFファイルへの変換処理</title><?dtp level="3" section="STFファイルへの変換処理"?>
+<p>保存されたGMMMapインスタンスを用いて特徴量を変換し、MFCCの逆変換によってスペクトル包絡を復元した後にSTFファイルに保存する処理を実装する。</p>
+<codelist>
+<caption>リスト4.4　convert_gmmmap.py</caption>
+<pre><span type='lineno'> 1: </span>#!/usr/bin/env python
+<span type='lineno'> 2: </span>
+<span type='lineno'> 3: </span>import math
+<span type='lineno'> 4: </span>import numpy
+<span type='lineno'> 5: </span>import pickle
+<span type='lineno'> 6: </span>import sklearn
+<span type='lineno'> 7: </span>import sys
+<span type='lineno'> 8: </span>
+<span type='lineno'> 9: </span>from gmmmap import GMMMap
+<span type='lineno'>10: </span>
+<span type='lineno'>11: </span>from stf import STF
+<span type='lineno'>12: </span>from mfcc import MFCC
+<span type='lineno'>13: </span>from dtw import DTW
+<span type='lineno'>14: </span>
+<span type='lineno'>15: </span>K = 32
+<span type='lineno'>16: </span>DIMENSION = 16
+<span type='lineno'>17: </span>
+<span type='lineno'>18: </span>if __name__ == '__main__':
+<span type='lineno'>19: </span>    if len(sys.argv) &lt; 5:
+<span type='lineno'>20: </span>        print 'Usage: %s [gmmmap] [f0] [input] [output]' % sys.argv[0]
+<span type='lineno'>21: </span>        sys.exit()
+<span type='lineno'>22: </span>
+<span type='lineno'>23: </span>    # 保存されたGMMMapインスタンスを読み込む
+<span type='lineno'>24: </span>    gmm_file = open(sys.argv[1], 'rb')
+<span type='lineno'>25: </span>    gmmmap = pickle.load(gmm_file)
+<span type='lineno'>26: </span>    gmm_file.close()
+<span type='lineno'>27: </span>
+<span type='lineno'>28: </span>    # F0の変換パラメータを読み込む
+<span type='lineno'>29: </span>    f0_file = open(sys.argv[2], 'rb')
+<span type='lineno'>30: </span>    f0 = pickle.load(f0_file)
+<span type='lineno'>31: </span>    f0_file.close()
+<span type='lineno'>32: </span>
+<span type='lineno'>33: </span>    source = STF()
+<span type='lineno'>34: </span>    source.loadfile(sys.argv[3])
+<span type='lineno'>35: </span>    # F0の有声部分について、パラメータに基づいて変換する
+<span type='lineno'>36: </span>    source.F0[source.F0 != 0] = \
+<span type='lineno'>37: </span>        numpy.exp((numpy.log(source.F0[source.F0 != 0]) - f0[0][0]) \
+<span type='lineno'>38: </span>                                        * f0[1][1] / f0[1][0] + f0[0][1])
+<span type='lineno'>39: </span>
+<span type='lineno'>40: </span>    # 変換元のMFCCを計算する
+<span type='lineno'>41: </span>    mfcc = MFCC(source.SPEC.shape[1] * 2, source.frequency, dimension = DIMENSION)
+<span type='lineno'>42: </span>    source_data = numpy.array([mfcc.mfcc(source.SPEC[frame]) \
+<span type='lineno'>43: </span>                                        for frame in xrange(source.SPEC.shape[0])])
+<span type='lineno'>44: </span>
+<span type='lineno'>45: </span>    # GMMMapで特徴量を変換し、MFCCの逆変換でスペクトル包絡を復元する
+<span type='lineno'>46: </span>    output_mfcc = numpy.array([gmmmap.convert(source_data[frame])[0] \
+<span type='lineno'>47: </span>                                        for frame in xrange(source_data.shape[0])])
+<span type='lineno'>48: </span>    output_spec = numpy.array([mfcc.imfcc(output_mfcc[frame]) \
+<span type='lineno'>49: </span>                                        for frame in xrange(output_mfcc.shape[0])])
+<span type='lineno'>50: </span>
+<span type='lineno'>51: </span>    # STFファイルのスペクトル包絡を上書きして保存する
+<span type='lineno'>52: </span>    source.SPEC = output_spec
+<span type='lineno'>53: </span>    source.savefile(sys.argv[4])
+</pre></codelist>
+<title aid:pstyle="h2">4.4　混合ガウスモデルによる変換処理の結果</title><?dtp level="2" section="4.4　混合ガウスモデルによる変換処理の結果"?>
+<p>以下の画像は、GMMによる変換の結果を表したグラフである。それぞれのグラフはMFCCの第1次係数(数値が小さい方)及び第2次係数(数値が大きい方)の推移を表しており、上から、変換先話者のデータ、GMMによる変換結果のデータ、GMMによる変換に用いた変換元話者のデータをDTWによって伸縮させたものである。非常にわかりにくいが、下段のグラフよりは中段のグラフの方が、上段のグラフに近いように見えなくもない。また、この手法ではフレームごとに独立して変換を行っているため、変換結果のグラフがかなりギザギザになっていることもわかる。</p>
+<img>
+<Image href="file://images/gmm-result.png" scale="0.6" />
+<caption>図4.3　GMMによる変換結果と変換先話者データの比較</caption>
+</img>
+</doc>
