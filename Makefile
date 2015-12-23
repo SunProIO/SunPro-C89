@@ -9,6 +9,8 @@ NPMDIR = $(shell npm bin)
 
 BE = bundle exec
 
+.PRECIOUS: $(SOURCES)
+
 build: clean all
 	git submodule init
 	git submodule update
