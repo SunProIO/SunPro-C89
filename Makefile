@@ -22,10 +22,13 @@ clean:
 %.re: %.src-re
 	$(NPMDIR)/lsc scripts/build.ls "$<" "$@"
 
-%.xml: %.re
-	$(BE) review-compile --target idgxml "$<" > "$@"
+%.rawxml: %.re
+	$(BE) review-compile --target idgxml "$<" --yaml config.yml > "$@"
+
+%.xml: %.rawxml
+	sed -e 's/file:\/\/src/file:\/\/\/C:\/Users\/hakatashi\/Documents\/src/g' "$<" > "$@"
 
 %.html: %.re
-	$(BE) review-compile --target html "$<" > "$@"
+	$(BE) review-compile --target html "$<" --yaml config.yml > "$@"
 
 all: $(XMLS) $(HTMLS)

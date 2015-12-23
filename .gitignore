@@ -122,6 +122,7 @@ Gemfile.lock
 # ========================
 
 # Build fils
+*.rawxml
 *.xml
 *.html
 *.tex
