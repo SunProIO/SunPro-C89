@@ -126,4 +126,5 @@ Gemfile.lock
 *.html
 *.tex
 *.pdf
-*.build-re
+*.re
+images
