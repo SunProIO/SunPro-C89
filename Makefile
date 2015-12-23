@@ -1,7 +1,7 @@
-REVIEWS = $(shell find . -name '*.re' | sed 's/ /\\ /g')
-SOURCES = $(REVIEWS:.re=.build-re)
-XMLS = $(REVIEWS:.re=.xml)
-HTMLS = $(REVIEWS:.re=.html)
+REVIEWS = $(shell find . -name '*.src-re' | sed 's/ /\\ /g')
+SOURCES = $(REVIEWS:.src-re=.re)
+XMLS = $(REVIEWS:.src-re=.xml)
+HTMLS = $(REVIEWS:.src-re=.html)
 
 SRCDIR = src
 
@@ -19,13 +19,13 @@ clean:
 	rm $(SOURCES) -rf
 	rm $(XMLS) -rf
 
-%.build-re: %.re
+%.re: %.src-re
 	$(NPMDIR)/lsc scripts/build.ls "$<" "$@"
 
-%.xml: %.build-re
+%.xml: %.re
 	$(BE) review-compile --target idgxml "$<" > "$@"
 
-%.html: %.build-re
+%.html: %.re
 	$(BE) review-compile --target html "$<" > "$@"
 
 all: $(XMLS) $(HTMLS)
