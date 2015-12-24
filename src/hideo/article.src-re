@@ -1,0 +1,477 @@
+= Rasberry Piで照明のスイッチと永遠におさらばする方法
+
+== はじめに
+
+=== 自己紹介
+
+こんにちは。おそらく多くの読者さんには初めまして。SunProメンバーの@hideo54です。灘高校で高校1年生をしていますが、学業の傍らいろいろやりたい放題やっています。
+
+灘高校では @<href>{http://npca.jp, 灘校パソコン研究部(NPCA)} に所属しています。今のところ、SunProメンバーは皆NPCA卒業生です。よければ以後お見知り置きを。
+
+====[column] 自己紹介リンクいろいろ
+
+    * Twitter: @<href>{https://twitter.com/hideo54, @hideo54}
+    * Homepage: @<href>{https://hideo54.com}
+    * Blog: @<href>{https://blog.hideo54.com}
+    * Wishlist: @<href>{https://wishlist.hideo54.com}
+    * E-mail: @<tt>{contact@hideo54.com}
+
+====[/column]
+
+=== やること
+
+先日東京に行く機会があったのですが、秋葉原でぼっちうろうろしていた時、「NFCタグ」というキーワードを含んだでかい広告を見かけて、「そういやNFCで遊んだことないなぁ…」と思い、つい衝動買いしてしまいました。20枚1200円です。1枚あたりで考えてみると安い気がしますね。
+そこで、早速NFCタグでいろいろ遊んでみようと思い、第一弾としてタイトルのようなことをしようと思ったのです。
+
+その前に、次の章ではNFCの基本のごく一部について、その次ではNFCタグのPythonでの読み書きについて書いていきます。
+実は、NFCタグの読み書きの方は、すでに @<href>{https://blog.hideo54.com/archives/351, Raspberry Pi Advent Calendar 2015 19日目の記事} として僕のブログで公開したものを少し加筆したものにすぎません。今回の工作では読み書きは必要ないのですが、nfcpyで遊ぶにはたいてい必要になりますし、するべき準備は同じなので、ついでにこちらにも載せることにしました。よろしくお願いします。
+
+== [座学] NFCの基本的なこと
+
+=== モード
+
+NFCフォーラムという業界標準団体によると、NFC(Near Field Communication / 近距離無線通信)という技術では、3つのモードがサポートされています。
+
+    * カードエミュレーションモード: NFC端末をICチップとして振る舞わせる
+    * リーダー/ライターモード: NFC端末と情報を読み書きする
+    * P2Pモード: NFC端末同士でデータのやりとりをする
+
+今回はカードリーダー/ライターモードを使用します。
+
+=== NDEF(NFC Data Exchange Format)
+
+NDEF(NFC Data Exchange Format)は、NFCデバイス間でデータを交換したり、NFCタグ上にデータを持たせたりする時の、バイナリのフォーマットのことを指します。
+NDEF Messageは1つ以上のNDEF Recordで構成されており、それぞれのNDEF Recordにデータを持たせていく、という風な仕組みで使われます。
+知識がなくても基本的なことは扱えるのでここでは省略しますが、各Recordに持たせるHeaderのバイナリの規則もなかなか面白いので、興味を持った方は調べてみてください。
+
+== NFCタグを読み書きする
+
+==={tag} 必要なもの
+
+    * Raspberry Piおよびその使用に必要な最低限の環境(電源、SDカード)
+        ** OS: Raspbian
+    * NFCタグ
+    * NFCリーダー/ライター
+
+Raspberry Pi は、安定性の理由からB+以上がおすすめです。
+今回、RaspbianはDebian 8(Jessie)ベースのものを、NFCリーダー/ライターには、 @<href>{http://www.amazon.co.jp/dp/B00948CGAG, SONYのPaSoRi} を使用しました。
+
+==={tag} 環境構築
+
+@<href>{http://nfc-tools.org, libnfc} を使う手もありますが、工作の際にはGPIOピンをPythonでいじった方がよりやりやすいと思うので、Pythonでお手軽にいじれる @<href>{http://nfcpy.org/latest/index.html, nfcpy} を利用します。
+というわけで、利用にあたって必要なものをインストールします。
+
+==== libusb
+
+Raspbian に標準で入ってました。確かに入ってそう。
+
+==== PyUSB
+
+PaSoRiはUSB接続で使用しますので、PythonからUSBポートにアクセスするために必要です。僕はpipで入れました。
+
+//cmd{
+sudo pip install pyusb --pre
+//}
+
+==== nfcpy
+
+ドキュメントに従って入れます。
+
+//cmd{
+sudo apt-get install bzr
+cd ~
+bzr branch lp:nfcpy trunk
+//}
+
+これで、@<tt>{~/trunk}下にいろいろ落ちたはずです。
+
+==== どこでもnfcpyを使えるようにする
+
+(ここらへん環境によって違いそうな気がするけど、よく考えたら Raspbian 前提にしてるから別に注釈いらないか。)
+
+//cmd{
+cp -R trunk/nfc /usr/local/lib/python2.7/dist-packages
+//}
+
+==== sudoしなくてもUSBデバイスを見れるようにする
+
+デフォルトだと、sudoをつけてPythonプログラムを実行しないと、USB接続のリーダーを認識してくれません。
+そこで、リーダー情報を登録して、sudoしなくても認識できるようにします。
+
+//cmd{
+dmesg | tail
+//}
+
+すると、
+
+//emlist[][text]{
+[ 4225.809847] usb 1-1.3: new full-speed USB device number 4 using dwc_otg
+[ 4225.914395] usb 1-1.3: New USB device found, idVendor=054c, idProduct=06c3
+[ 4225.914435] usb 1-1.3: New USB device strings: Mfr=1, Product=2, SerialNumber=4
+[ 4225.914453] usb 1-1.3: Product: RC-S380/P
+[ 4225.914469] usb 1-1.3: Manufacturer: SONY
+[ 4225.914484] usb 1-1.3: SerialNumber: *******
+//}
+
+みたいな感じのが出てくるので、/etc/udev/rules.d/nfcdev.rulesを以下のように編集。
+
+//emlist[][text]{
+SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="054c", ATTRS{idProduct}=="06c3", GROUP=="sudo"
+//}
+
+これで、sudoグループに入ってるユーザーはsudoなしで認識できるようになりました。(ここらへん、"nfc"グループを作って、ユーザーを放り込んで、nfcグループ指定にしたほうが良い気がする。)
+
+=== NFCタグ内のデータの読み書き
+
+やっと準備完了。
+以下のような、NFCタグ内のデータを読む簡単なPythonプログラムを作成しました。
+
+//emlistnum[][python]{
+import nfc
+clf = nfc.ContactlessFrontend('usb')
+
+def connected(tag):
+    print tag.ndef.message.pretty()
+
+clf.connect(rdwr={'on-connect': connected})
+//}
+
+実行して新品のNFCタグをあてると、以下のようなデータが出ます。
+
+//emlist[][text]{
+record 1
+  type   = ''
+  name   = ''
+  data   = ''
+//}
+
+買ったまま何も手を加えていないからね。というわけでデータを書き込んでみます。
+
+//emlistnum[][python]{
+import nfc
+clf = nfc.ContactlessFrontend('usb')
+
+def connected(tag):
+    record = nfc.ndef.TextRecord("Hello World!")
+    tag.ndef.message = nfc.ndef.Message(record)
+    print tag.ndef.message.pretty()
+
+clf.connect(rdwr={'on-connect': connected})
+//}
+
+すると…
+
+//emlist[][text]{
+record 1
+  type   = 'urn:nfc:wkt:T'
+  name   = ''
+  data   = '\x02enHello World!'
+//}
+
+無事書き込めました!
+一旦プログラムを終了して再度読んでみても、ちゃんとデータが書き込まれていることが確認できます。めでたしめでたし。
+こんな感じで、お手軽に書き込めます。上記プログラムでは @<code>{nfc.ndef.TextRecord()} 関数を用いましたが、nfcpyでは他にも多くのNDEFの記録関数が用意されています。詳しくは @<href>{http://nfcpy.readthedocs.org/en/latest/modules/ndef.html, 公式ドキュメント} を参照してください。
+
+== 工作 ~NFCタグを貼ったドアを部屋の照明のスイッチにする~
+
+本題です。
+
+実は数カ月前に引っ越しをしまして、それに伴い部屋の構造や机なども変えたのですが、概ね快適と言えるものの、部屋のLED照明のスイッチが割りと押しにくい感じになってしまいました。
+
+//image[around-switch][照明のスイッチ周りの状況]
+
+そこで、「@<strong>{部屋のドアをスイッチ代わりにすればいいんじゃね?!?!}」と思いついたので、実行しました。
+ドアが開いてるか閉じてるかを判定するのに、NFCタグを使うことにしました。くっついていなくても、タグとリーダーが数cm以内にあれば良いので、動くものの状態判定には最適ですね!
+
+(※発想自体についてはわかりませんが、必要なことについては特に新規性はないです。)
+
+=== 構想の概要
+
+    * 部屋のドアにNFCタグを貼り付け、そのすぐ近くの棚にNFCリーダーを置いておく。
+    * タグが離れた状態から近づいた状態になったとリーダーが感知した時、フラグの値を変更する。
+    * フラグがTrueの時はLED照明をオンに、Falseの時はオフにする。
+    * LED照明のオン/オフは、Raspberry PiのGPIOピンに接続された赤外線LEDへの電流をオン/オフすることによって行う。
+
+要するに、@<strong>{ドアが閉まるたびに電気をつけたり消したりする}、ということです。
+
+とりあえず準備したらこうなりました。
+
+//image[result][配置の結果]
+
+ブレッドボード部分を延ばしているのは、赤外線LEDが天井に向くようにするためです。
+
+めっちゃ「なんとかした」感が強くてあまりスマートに見えませんが、まあ動くからいいでしょう(適当)
+
+以下、やったことです。
+
+=== 照明を操作する
+
+===={room} 必要なもの
+
+    * Raspberry Pi (上記と同じなので省略)
+    * 赤外線LED
+    * 赤外線受光器
+    * ブレッドボード、ジャンパワイヤ
+
+===={room} 環境構築
+
+lircをインストールします。
+
+//cmd{
+sudo apt-get install lirc
+//}
+
+使用するGPIOピン番号を決めます。僕は今回、入力を20、出力を21としました。
+
+決めた通りに配線します。
+
+//image[wiring][配線]
+
+/etc/lirc/hardware.conf を以下のように編集します:
+
+//emlistnum[][text]{
+# /etc/lirc/hardware.conf
+#
+# Arguments which will be used when launching lircd
+LIRCD_ARGS="--uinput"
+
+#Don't start lircmd even if there seems to be a good config file
+#START_LIRCMD=false
+
+#Don't start irexec, even if a good config file seems to exist.
+#START_IREXEC=false
+
+#Try to load appropriate kernel modules
+LOAD_MODULES=true
+
+# Run "lircd --driver=help" for a list of supported drivers.
+DRIVER="default"
+# usually /dev/lirc0 is the correct setting for systems using udev
+DEVICE="/dev/lirc0"
+MODULES="lirc_rpi"
+
+# Default configuration files for your hardware if any
+LIRCD_CONF=""
+LIRCMD_CONF=""
+//}
+
+次に、lircモジュールを追加します。
+(@<strong>{やや古い資料では /etc/modules に追加する方法が見つかりますが、仕様変更により以下の方法でないと失敗するようになったので、気をつけてください!})
+
+@<tt>{/boot/config.txt} に以下の1行を追加します:
+
+//emlist[][text]{
+dtoverlay=lirc-rpi, gpio_in_pin=20, gpio_out_pin=21
+//}
+
+再起動してモジュールを有効にします:
+
+//cmd{
+sudo reboot
+//}
+
+以下のコマンドを実行して、 lirc_rpi, lirc_dev, rc_core が表示されたら成功です。
+
+//cmd{
+lsmod | grep lirc
+//}
+
+以下のコマンドを入力したあと、受光器にリモコンを向けボタンを押し、リモコンコードを受信できているか確認します:
+
+//cmd{
+sudo /etc/init.d/lirc stop
+sudo mode2 -d /dev/lirc0
+//}
+
+==== LED照明のリモコンの記憶
+
+次のコマンドを実行して、出てきた英文に従ってセットアップを済ませます:
+
+//cmd{
+sudo irrecord -n -d /dev/lirc0 room-led
+//}
+
+ちょっとわかりにくい感じの文でしたがまあ頑張って登録を済ませました(適当)。
+
+ちなみに、こんな感じの @<tt>{room-led.conf} が生成されます。
+
+//emlistnum[][text]{
+# Please make this file available to others
+# by sending it to <lirc@bartelmus.de>
+#
+# this config file was automatically generated
+# using lirc-0.9.0-pre1(default) on Wed Dec 23 19:15:29 2015
+#
+# contributed by
+#
+# brand:                       room-led.conf
+# model no. of remote control:
+# devices being controlled by this remote:
+#
+
+begin remote
+
+  name  room-led.conf
+  bits           16
+  flags SPACE_ENC|CONST_LENGTH
+  eps            30
+  aeps          100
+
+  header       9087  4503
+  one           594  1661
+  zero          594   546
+  ptrail        592
+  repeat       9087  2247
+  pre_data_bits   16
+  pre_data       0x41B6
+  gap          108695
+  toggle_bit_mask 0x0
+
+      begin codes
+          on                       0x659A
+          off                      0x7D82
+      end codes
+
+end remote
+//}
+
+こいつをデフォルトの設定ファイルとされている @<tt>{/etc/lirc/lircd.conf} に追記します。
+
+//cmd{
+sudo sh -c "cat room-led.conf > /etc/lirc/lircd.conf"
+//}
+
+==== LED照明のコントロール
+
+//cmd{
+irsend SEND_ONCE room-led.conf off
+irsend SEND_ONCE room-led.conf on
+//}
+
+これで電気が消えたりついたりしました! あとはNFCタグと組み合わせるだけです!!
+
+=====[column] Connection refusedされたときは
+
+//emlistnum[][python]{
+irsend: could not connect to socket
+irsend: Connection refused
+//}
+
+とか言われたら、lircdが動いていないということなので、 @<code>{sudo systemctl restart lircd.service} してあげましょう!
+
+僕はこれで長時間つまづきまくっていて、危うく原稿出せなくなるところでした…
+
+=====[/column]
+
+=== NFCタグ認識によるフラグの管理
+
+前述の構想から、ドアが閉まるたび、つまりNFCタグがリーダーに認識されるたびにフラグ( @<tt>{should_on} )の値を更新すれば良さそうです。
+
+@<tt>{nfc.clf} モジュールの @<tt>{connect} は、 @<tt>{terminate} オプションで関数を指定された時、「タグが認識されるか、指定された関数がTrueを返すとき、終了する」という振る舞いをします。( @<href>{http://nfcpy.readthedocs.org/en/latest/modules/clf.html#nfc.clf.ContactlessFrontend.connect, 公式ドキュメント} 参照)
+
+タグが離れた時に終了する、といった便利なメソッドは残念ながら用意されていなかったので、各秒について、前秒( @<tt>{was_door_closed} )は開いていて、現在の秒( @<tt>{is_door_closed} )は閉まっている状態、つまりたった今閉じられた状態に、フラグ( @<tt>{should_on} )を更新する、といった挙動をさせました。
+
+//emlistnum[][python]{
+import nfc
+import time
+
+clf = nfc.ContactlessFrontend('usb')
+
+was_door_closed = False
+is_door_closed = False
+should_on = False
+
+while True:
+    was_door_closed = is_door_closed
+    is_door_closed = False
+
+    after1s = lambda : time.time() - started > 1
+    started = time.time()
+    clf.connect(rdwr={'on-connect': connected}, terminate=after1s)
+    if is_door_closed == True and was_door_closed == False:
+        if should_on == True:
+            should_on = False
+            # Turn on the switch.
+        else:
+            should_on = True
+            # Turn off the switch.
+//}
+
+=== 完成品
+
+前述のフラグ( @<tt>{should_on} )を関数に渡して、関数内でon/offさせれば良さそうです。
+on/offは、Python側でシェルのコマンドを実行させるのが最も楽だと思いましたので、そうしました。
+
+//emlistnum[][python]{
+import nfc
+import subprocess
+import time
+import sys
+
+clf = nfc.ContactlessFrontend('usb')
+
+was_door_closed = False
+is_door_closed = False
+should_on = False
+
+def change_led_value(flag):
+    if flag == True:
+        subprocess.call('irsend SEND_ONCE room-led.conf on', shell=True)
+        print 'turned on'
+    else:
+        subprocess.call('irsend SEND_ONCE room-led.conf off', shell=True)
+        print 'turned off'
+
+def connected(tag):
+    global is_door_closed
+    is_door_closed = True
+
+atexit.register(finished)
+
+while True:
+    was_door_closed = is_door_closed
+    is_door_closed = False
+
+    after1s = lambda : time.time() - started > 1
+    started = time.time()
+    clf.connect(rdwr={'on-connect': connected}, terminate=after1s)
+    if is_door_closed == True and was_door_closed == False:
+        if should_on == True:
+            should_on = False
+            change_led_value(should_on)
+        else:
+            should_on = True
+            change_led_value(should_on)
+//}
+
+完成です!!
+
+//cmd{
+nohup python nfced-room.py &
+//}
+
+でバックグラウンド実行するなりして運用したいと思います。
+
+=== 感想
+
+部屋を出る時に必ず電気が消えるため、電気の消し忘れもなくなり、なかなか便利になるのではないかと思います。(現在原稿提出の締め切り直前なので、まだ運用歴ないです…)
+
+NFCタグの技術的な感想としては、セットアップは面倒でしたが、実装は易しかったので、今後は色々手を広げたいなぁという感じです。
+
+せっかくだし、NPCAの部誌もNFC関連でやっちゃおうかなあと思っています(1つアイデアがある)。5/2-3の文化祭にてオンラインで公開されるので、その際はぜひ御覧ください!!(宣伝)
+
+== 終わりに
+
+読んでいただきありがとうございました!
+
+何か質問などありましたら、冒頭に書きました連絡先にご連絡ください。
+また、僕もプロではないので、投げるマサカリがありましたらご気軽にお投げください。
+
+=== 参考文献
+
+    * @<href>{http://nfcpy.org/latest/index.html, nfcpy公式ドキュメント} : インストール、読み書きなど
+    * @<href>{http://plaza.rakuten.co.jp/kugutsushi/diary/201402230000/} : /etc/udev/rules.d/nfcdev.rules の記法
+    * @<href>{http://make.bcde.jp/category/27/} : lircまわりいろいろ
+    * @<href>{http://www.lirc.org/html/programs.html, LIRC manpages} : lircまわりいろいろ
+    * @<href>{http://wbbwbb.blog83.fc2.com/blog-entry-189.html} : lircモジュールの最新の追加方法
+    * その他いろいろ
