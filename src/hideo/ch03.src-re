@@ -1,0 +1,127 @@
+= NFCタグを読み書きする
+
+=={tag} 必要なもの
+
+    * Raspberry Piおよびその使用に必要な最低限の環境(電源、SDカード)
+        ** OS: Raspbian
+    * NFCタグ
+    * NFCリーダー/ライター
+
+Raspberry Pi は、安定性の理由からB+以上がおすすめです。
+今回、RaspbianはDebian 8(Jessie)ベースのものを、NFCリーダー/ライターには、 @<href>{http://www.amazon.co.jp/dp/B00948CGAG, SONYのPaSoRi} を使用しました。
+
+=={tag} 環境構築
+
+@<href>{http://nfc-tools.org, libnfc} を使う手もありますが、工作の際にはGPIOピンをPythonでいじった方がよりやりやすいと思うので、Pythonでお手軽にいじれる @<href>{http://nfcpy.org/latest/index.html, nfcpy} を利用します。
+というわけで、利用にあたって必要なものをインストールします。
+
+=== libusb
+
+Raspbian に標準で入ってました。確かに入ってそう。
+
+=== PyUSB
+
+PaSoRiはUSB接続で使用しますので、PythonからUSBポートにアクセスするために必要です。僕はpipで入れました。
+
+//cmd{
+sudo pip install pyusb --pre
+//}
+
+=== nfcpy
+
+ドキュメントに従って入れます。
+
+//cmd{
+sudo apt-get install bzr
+cd ~
+bzr branch lp:nfcpy trunk
+//}
+
+これで、@<tt>{~/trunk}下にいろいろ落ちたはずです。
+
+=== どこでもnfcpyを使えるようにする
+
+(ここらへん環境によって違いそうな気がするけど、よく考えたら Raspbian 前提にしてるから別に注釈いらないか。)
+
+//cmd{
+cp -R trunk/nfc /usr/local/lib/python2.7/dist-packages
+//}
+
+=== sudoしなくてもUSBデバイスを見れるようにする
+
+デフォルトだと、sudoをつけてPythonプログラムを実行しないと、USB接続のリーダーを認識してくれません。
+そこで、リーダー情報を登録して、sudoしなくても認識できるようにします。
+
+//cmd{
+dmesg | tail
+//}
+
+すると、
+
+//emlist[][text]{
+[ 4225.809847] usb 1-1.3: new full-speed USB device number 4 using dwc_otg
+[ 4225.914395] usb 1-1.3: New USB device found, idVendor=054c, idProduct=06c3
+[ 4225.914435] usb 1-1.3: New USB device strings: Mfr=1, Product=2, SerialNumber=4
+[ 4225.914453] usb 1-1.3: Product: RC-S380/P
+[ 4225.914469] usb 1-1.3: Manufacturer: SONY
+[ 4225.914484] usb 1-1.3: SerialNumber: *******
+//}
+
+みたいな感じのが出てくるので、/etc/udev/rules.d/nfcdev.rulesを以下のように編集。
+
+//emlist[][text]{
+SUBSYSTEM=="usb", ACTION=="add", ATTRS{idVendor}=="054c", ATTRS{idProduct}=="06c3", GROUP=="sudo"
+//}
+
+これで、sudoグループに入ってるユーザーはsudoなしで認識できるようになりました。(ここらへん、"nfc"グループを作って、ユーザーを放り込んで、nfcグループ指定にしたほうが良い気がする。)
+
+== NFCタグ内のデータの読み書き
+
+やっと準備完了。
+以下のような、NFCタグ内のデータを読む簡単なPythonプログラムを作成しました。
+
+//emlistnum[][python]{
+import nfc
+clf = nfc.ContactlessFrontend('usb')
+
+def connected(tag):
+    print tag.ndef.message.pretty()
+
+clf.connect(rdwr={'on-connect': connected})
+//}
+
+実行して新品のNFCタグをあてると、以下のようなデータが出ます。
+
+//emlist[][text]{
+record 1
+  type   = ''
+  name   = ''
+  data   = ''
+//}
+
+買ったまま何も手を加えていないからね。というわけでデータを書き込んでみます。
+
+//emlistnum[][python]{
+import nfc
+clf = nfc.ContactlessFrontend('usb')
+
+def connected(tag):
+    record = nfc.ndef.TextRecord("Hello World!")
+    tag.ndef.message = nfc.ndef.Message(record)
+    print tag.ndef.message.pretty()
+
+clf.connect(rdwr={'on-connect': connected})
+//}
+
+すると…
+
+//emlist[][text]{
+record 1
+  type   = 'urn:nfc:wkt:T'
+  name   = ''
+  data   = '\x02enHello World!'
+//}
+
+無事書き込めました!
+一旦プログラムを終了して再度読んでみても、ちゃんとデータが書き込まれていることが確認できます。めでたしめでたし。
+こんな感じで、お手軽に書き込めます。上記プログラムでは @<code>{nfc.ndef.TextRecord()} 関数を用いましたが、nfcpyでは他にも多くのNDEFの記録関数が用意されています。詳しくは @<href>{http://nfcpy.readthedocs.org/en/latest/modules/ndef.html, 公式ドキュメント} を参照してください。

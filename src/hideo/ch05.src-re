@@ -1,0 +1,15 @@
+= 終わりに
+
+読んでいただきありがとうございました!
+
+何か質問などありましたら、冒頭に書きました連絡先にご連絡ください。
+また、僕もプロではないので、投げるマサカリがありましたらご気軽にお投げください。
+
+== 参考文献
+
+    * @<href>{http://nfcpy.org/latest/index.html, nfcpy公式ドキュメント} : インストール、読み書きなど
+    * @<href>{http://plaza.rakuten.co.jp/kugutsushi/diary/201402230000/} : /etc/udev/rules.d/nfcdev.rules の記法
+    * @<href>{http://make.bcde.jp/category/27/} : lircまわりいろいろ
+    * @<href>{http://www.lirc.org/html/programs.html, LIRC manpages} : lircまわりいろいろ
+    * @<href>{http://wbbwbb.blog83.fc2.com/blog-entry-189.html} : lircモジュールの最新の追加方法
+    * その他いろいろ
