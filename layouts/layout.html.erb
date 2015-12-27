@@ -21,5 +21,21 @@
 		<div class="body-wrap">
 			<%= @body %>
 		</div>
+		<footer class="footer">
+			<div class="next-button">
+				<% if @next.present? %>
+					<a href="<%= @next.name %>">NEXT</a>
+				<% else %>
+					<a class="disabled">NEXT</a>
+				<% end %>
+			</div>
+			<div class="prev-button">
+				<% if @prev.present? %>
+					<a href="<%= @prev.name %>">PREV</a>
+				<% else %>
+					<a class="disabled">PREV</a>
+				<% end %>
+			</div>
+		</footer>
 	</body>
 </html>
