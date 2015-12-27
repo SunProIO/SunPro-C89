@@ -64,23 +64,22 @@ pre {
 }
 
 h1 {
-	@height: 1em;
-	@padding-top: 0.4em;
-	height: @height + @padding-top * 2;
-	margin: 1em;
-	padding: @padding-top 1em;
-
-	background: #E5E5E5;
-
-	border-radius: 4px;
-	border: 1px solid lightgray;
-
-	line-height: @height;
-	font-size: 30px;
+	font-size: 42px;
+	font-family: serif;
+	text-align: center;
+	line-height: 1.2em;
+	background: #B7B7B7;
+	color: #1D1D1D;
+	padding: 5px 0;
 
 	.secno {
-		border-right: 1px solid #CCC;
-		margin-right: 1em;
+		display: block;
+		text-align: center;
+		font-family: serif;
+		border-bottom: 2px groove lightgray;
+		text-indent: 1em;
+		font-size: 0.6em;
+		line-height: 1.2em;
 	}
 }
 
@@ -145,4 +144,15 @@ div.caption-code, div.code, div.emlist-code {
 	width: 90%;
 	text-align: center;
 	margin: 1.5em auto;
+}
+
+footer.footer {
+	display: flex;
+
+	width: 480px;
+	margin: 0 auto 5em;
+
+	& > * {
+		flex-grow: 1;
+	}
 }
