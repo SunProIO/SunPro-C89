@@ -141,7 +141,7 @@ p.caption {
 	font-weight: bold;
 }
 
-div.caption-code, div.code, div.emlist-code {
+.caption-code, .code, .emlist-code, .cmd-code, .emlistnum-code {
 	width: 90%;
 	text-align: center;
 	margin: 1.5em auto;
@@ -155,5 +155,38 @@ footer.footer {
 
 	& > * {
 		flex-grow: 1;
+
+		height: 48px;
+		line-height: 48px;
+		color: white;
+
+		font-size: 24px;
+
+		&.prev-button {
+			text-align: left;
+
+			a:before {
+				content: '◀';
+			}
+		}
+
+		&.next-button {
+			text-align: right;
+
+			a:after {
+				content: '▶';
+			}
+		}
+	}
+
+	a {
+		display: block;
+
+		color: inherit;
+		font-weight: inherit;
+
+		&, &:hover, &:active {
+			text-decoration: none;
+		}
 	}
 }
