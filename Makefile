@@ -14,8 +14,7 @@ build: clean all
 	git submodule update
 
 clean:
-	rm $(SOURCES) -rf
-	rm $(XMLS) -rf
+	rm $(SOURCES) $(XMLS) $(HTMLS) -f
 
 %.re: %.src-re
 	$(NPMDIR)/lsc scripts/build.ls "$<" "$@"
@@ -26,8 +25,13 @@ clean:
 %.xml: %.rawxml
 	sed -e 's/file:\/\/src/file:\/\/\/C:\/Users\/hakatashi\/Documents\/src/g' "$<" > "$@"
 
-%.html: %.re
+%.html: %.src-re
+	cp "$<" "$(basename $<).re"
 	cp --parents layouts/layout.html.erb "$(dir $<)"
 	cd "$(dir $<)"; $(BE) review-compile --target html "$(notdir $<)" --yaml ../../config.yml > "$(notdir $@)"
 
-all: $(XMLS) $(HTMLS)
+html: $(HTMLS)
+
+xml: $(XMLS)
+
+all: $(HTMLS) $(XMLS)
