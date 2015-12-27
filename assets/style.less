@@ -5,8 +5,85 @@ html {
 	color: #333;
 }
 
+html, body {
+	width: 100%;
+}
+
 body {
+	background: #EBDDC2;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+.body-wrap {
 	width: 100%;
 	max-width: 720px;
 	margin: 0 auto;
+
+	background: white;
+	border-radius: 10px;
+}
+
+p {
+	margin: 0.5em 5%;
+	line-height: 1.8em;
+}
+
+a {
+	font-weight: bold;
+	text-decoration: none;
+	color: #2784E7;
+
+	&:hover, &:active {
+		text-decoration: underline;
+	}
+}
+
+pre {
+	background: #EEE;
+	border-radius: 5px;
+	padding: 0.5em;
+	margin: 0;
+	text-align: left;
+	font-size: 0.8em;
+}
+
+h1 {
+
+}
+
+h2 {
+	span.secno {
+		font-size: 0.8em;
+		color: darkgray;
+	}
+}
+
+div.image {
+	text-align: center;
+
+	img {
+		max-width: 95%;
+		max-height: 70vh;
+
+		margin: 0 auto;
+		padding: 2px;
+
+		border: 1px double lightgray;
+		border-radius: 3px;
+	}
+}
+
+p.caption {
+	margin: 0.2em 0;
+	font-size: 0.8em;
+	font-weight: bold;
+}
+
+div.caption-code {
+	width: 90%;
+	text-align: center;
+	margin: 1.5em auto;
 }
