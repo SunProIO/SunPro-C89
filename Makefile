@@ -27,6 +27,7 @@ clean:
 	sed -e 's/file:\/\/src/file:\/\/\/C:\/Users\/hakatashi\/Documents\/src/g' "$<" > "$@"
 
 %.html: %.re
+	cp --parents layouts/layout.html.erb "$(dir $<)"
 	cd "$(dir $<)"; $(BE) review-compile --target html "$(notdir $<)" --yaml ../../config.yml > "$(notdir $@)"
 
 all: $(XMLS) $(HTMLS)
