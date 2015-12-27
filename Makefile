@@ -9,8 +9,6 @@ NPMDIR = $(shell npm bin)
 
 BE = bundle exec
 
-.PRECIOUS: $(SOURCES)
-
 build: clean all
 	git submodule init
 	git submodule update
@@ -29,6 +27,6 @@ clean:
 	sed -e 's/file:\/\/src/file:\/\/\/C:\/Users\/hakatashi\/Documents\/src/g' "$<" > "$@"
 
 %.html: %.re
-	$(BE) review-compile --target html "$<" --yaml config.yml > "$@"
+	cd "$(dir $<)"; $(BE) review-compile --target html "$(notdir $<)" --yaml ../../config.yml > "$(notdir $@)"
 
 all: $(XMLS) $(HTMLS)

@@ -1,0 +1,19 @@
+<%# [@body, @title, @toc, @next, @prev, @builder, @language, @stylesheets, @template] %>
+<!DOCTYPE html>
+<html lang="<%= @language %>">
+	<head>
+		<meta charset="UTF-8">
+		<link href="../assets/style.css" rel="stylesheet" type="text/css">
+		<% if @next.present? %>
+			<link rel="next" href="<%= @next.name %>">
+		<% end %>
+		<% if @prev.present? %>
+			<link rel="prev" href="<%= @prev.name %>">
+		<% end %>
+		<meta content="Re:VIEW" name="generator">
+		<title><%= @title %></title>
+	</head>
+	<body>
+		<%= @body %>
+	</body>
+</html>
