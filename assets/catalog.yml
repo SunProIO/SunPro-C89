@@ -1,5 +1,6 @@
 - slug: hakatashi
   title: 機械学習で石川啄木の未完の短歌を完成させる
+  author: '@hakatashi'
   chapters:
     - slug: introduction
       title: イントロダクション
@@ -25,6 +26,7 @@
       title: 参考文献
 - slug: hiromu
   title: 実装でわかる統計的声質変換
+  author: '@hiromu1996'
   chapters:
     - slug: ch01
       title: はじめに
@@ -44,6 +46,7 @@
       title: 参考文献
 - slug: hideo
   title: Raspberry Pi で照明のスイッチと永遠におさらばする方法
+  author: '@hideo54'
   chapters:
     - slug: ch01
       title: はじめに

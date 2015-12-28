@@ -1,4 +1,5 @@
 const $ = require('jquery');
+const url = require('url');
 
 MathJax.Hub.Config({
 	tex2jax: {
@@ -18,5 +19,22 @@ $(document).ready(() => {
 		}
 
 		MathJax.Hub.Queue(['Typeset', MathJax.Hub, element]);
+	});
+});
+
+$.get('../assets/catalog.json', (articles, status) => {
+	const href = url.parse(window.location.href);
+	const paths = href.pathname.split('/')
+	const slug = paths[paths.length - 2];
+
+	const article = articles.filter(it => it.slug === slug)[0];
+
+	// Error if article is not found
+	if (article === undefined) {
+		return console.error('loading article data failed');
+	}
+
+	$(document).ready(() => {
+		$('header h1').text(`${article.title} ${article.author}`);
 	});
 });
