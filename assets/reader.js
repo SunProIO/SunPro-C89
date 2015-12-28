@@ -35,6 +35,6 @@ $.get('../assets/catalog.json', (articles, status) => {
 	}
 
 	$(document).ready(() => {
-		$('header h1').text(`${article.title} ${article.author}`);
+		$('header h1 > a').text(`${article.title} ${article.author}`);
 	});
 });
