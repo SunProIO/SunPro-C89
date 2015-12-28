@@ -1,14 +1,16 @@
 @import (inline) "node_modules/purecss/build/pure.css";
 @import (inline) "node_modules/purecss/build/grids-responsive.css";
 
+@modern-sans-serif: "Meiryo", "メイリオ", "ヒラギノ角ゴ ProN", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ Pro", "Hiragino Kaku Gothic Pro", "游ゴシック体", "YuGothic", "游ゴシック", "Yu Gothic", "IPAゴシック", "IPAGothic", "Arial", "Helvetica", sans-serif;
+@old-sans-serif: "游ゴシック体", "YuGothic", "游ゴシック", "Yu Gothic", "IPAゴシック", "IPAGothic", "MS Cothic", "ＭＳ ゴシック", "Meiryo", "メイリオ", "ヒラギノ角ゴ ProN", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ Pro", "Hiragino Kaku Gothic Pro", "Arial", "Helvetica", sans-serif;
+
 html {
-	font-family: "Meiryo", "メイリオ", "ヒラギノ角ゴ ProN", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ Pro", "Hiragino Kaku Gothic Pro", "游ゴシック体", "YuGothic", "游ゴシック", "Yu Gothic", "IPAゴシック", "IPAGothic", "Arial", "Helvetica", sans-serif;
-	background: #4E1A00;
-    color: white;
+	font-family: @modern-sans-serif;
+	background: url(../images/wov.png);
+    color: #333;
 }
 
 html, body {
-	width: 100vw;
 	height: 100%;
 }
 
@@ -16,11 +18,15 @@ html, body {
 	font-family: inherit;
 }
 
-header {
-	background-image: url(https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Sig07-006.jpg/640px-Sig07-006.jpg);
+.header-wrap {
+	background-image: url(../images/d-man.jpeg);
 
 	background-size: cover;
 	background-position: center;
+}
+
+header {
+	background: rgba(19, 54, 74, 0.7);
 
 	color: white;
 
@@ -71,7 +77,7 @@ header {
 				width: auto;
 				height: auto;
 				max-width: 80%;
-				max-height: 100%;
+				max-height: 400px;
 				vertical-align: middle;
 
 				@media screen and (max-width: 48em) {
@@ -88,6 +94,7 @@ header {
 		text-align: center;
 		font-weight: normal;
 		font-size: 48px;
+		font-family: @old-sans-serif;
 
 		@media screen and (max-width: 48em) {
 			font-size: 10vw;
@@ -99,6 +106,32 @@ header {
 	h1 {
 		text-align: center;
 		font-weight: normal;
+		font-size: 40px;
+	}
 
+	h2 {
+		text-align: center;
+		font-weight: normal;
+		font-size: 32px;
+	}
+
+	.publication {
+		width: 100%;
+		max-width: 1000px;
+
+		margin: 0 auto;
+
+		.cover {
+			height: 100%;
+
+			img {
+				display: block;
+
+				width: 50%;
+				margin: 0 auto;
+
+				position: relative;
+			}
+		}
 	}
 }

@@ -11,26 +11,27 @@ html(lang='ja')
 				Typekit.load({async: true});
 			} catch (e) {}
 	body
-		header
-			h1.tk-museo.pure-g
-				span.img-before.pure-u-1.pure-u-md-1-3 SunPro
-				span.img.pure-u-1.pure-u-md-1-3
-					img(src = 'images/logo.png', alt = 'ロゴ')
-				span.img-after.pure-u-1.pure-u-md-1-3 C89
+		.header-wrap
+			header
+				h1.tk-museo.pure-g
+					span.img-before.pure-u-1.pure-u-md-1-3 SunPro
+					span.img.pure-u-1.pure-u-md-1-3
+						img(src = 'images/logo.png', alt = 'ロゴ')
+					span.img-after.pure-u-1.pure-u-md-1-3 C89
 
-			p.place.pure-u-1 3日目 東ム-45a
+				p.place.pure-u-1 3日目 東ム-45a
 
 		div.body
 			h1.pure-u-1 頒布情報
 
-			h2 SunPro会誌 C89
+			h2 「SunPro会誌 2016」
 
-			div.publication
-				div.left
+			div.publication.pure-g
+				div.left.pure-u-1.pure-u-md-1-2
 					div.cover
 						img(src='images/cover.jpg')
 
-				div.right
+				div.right.pure-u-1.pure-u-md-1-2
 					div.github-link
 						a(href='https://github.com/hakatashi/SunPro-C89') ソースコード
 
