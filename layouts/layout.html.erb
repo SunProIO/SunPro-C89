@@ -1,5 +1,4 @@
 <%# [@body, @title, @toc, @next, @prev, @builder, @language, @stylesheets, @template] %>
-<%= this %>
 <!DOCTYPE html>
 <html lang="<%= @language %>">
 	<head>
@@ -20,25 +19,43 @@
 	<body>
 		<header class="header">
 			<img class="logo" src="../assets/web-header-logo.svg" alt="SunPro 2016" />
+			<nav>
+				<div class="prev-button nav-button">
+					<% if @prev.present? %>
+						<a href="<%= @prev.name %>">PREV</a>
+					<% else %>
+						<a class="disabled">PREV</a>
+					<% end %>
+				</div>
+				<div class="next-button nav-button">
+					<% if @next.present? %>
+						<a href="<%= @next.name %>">NEXT</a>
+					<% else %>
+						<a class="disabled">NEXT</a>
+					<% end %>
+				</div>
+			</nav>
 		</header>
 		<div class="body-wrap">
 			<%= @body %>
 		</div>
 		<footer class="footer">
-			<div class="prev-button nav-button">
-				<% if @prev.present? %>
-					<a href="<%= @prev.name %>">PREV</a>
-				<% else %>
-					<a class="disabled">PREV</a>
-				<% end %>
-			</div>
-			<div class="next-button nav-button">
-				<% if @next.present? %>
-					<a href="<%= @next.name %>">NEXT</a>
-				<% else %>
-					<a class="disabled">NEXT</a>
-				<% end %>
-			</div>
+			<nav>
+				<div class="prev-button nav-button">
+					<% if @prev.present? %>
+						<a href="<%= @prev.name %>">PREV</a>
+					<% else %>
+						<a class="disabled">PREV</a>
+					<% end %>
+				</div>
+				<div class="next-button nav-button">
+					<% if @next.present? %>
+						<a href="<%= @next.name %>">NEXT</a>
+					<% else %>
+						<a class="disabled">NEXT</a>
+					<% end %>
+				</div>
+			</nav>
 		</footer>
 	</body>
 </html>

@@ -18,7 +18,7 @@ body {
 }
 
 header {
-	margin: 1em 0;
+	margin: 1em 0 0;
 	text-align: center;
 
 	img.logo {
@@ -141,17 +141,24 @@ p.caption {
 	font-weight: bold;
 }
 
+// Block-level equation
+div.equation {
+	width: 100%;
+	overflow-x: scroll;
+}
+
 .caption-code, .code, .emlist-code, .cmd-code, .emlistnum-code {
 	width: 90%;
 	text-align: center;
 	margin: 1.5em auto;
 }
 
-footer.footer {
+nav {
 	display: flex;
 
 	width: 480px;
-	margin: 0 auto 5em;
+	max-width: 100%;
+	margin: 0 auto;
 
 	& > * {
 		flex-grow: 1;
@@ -164,6 +171,7 @@ footer.footer {
 
 		&.prev-button {
 			text-align: left;
+			margin-left: 1em;
 
 			a:before {
 				content: '◀';
@@ -172,6 +180,7 @@ footer.footer {
 
 		&.next-button {
 			text-align: right;
+			margin-right: 1em;
 
 			a:after {
 				content: '▶';
