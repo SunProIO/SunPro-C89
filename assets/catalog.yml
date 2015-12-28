@@ -1,0 +1,57 @@
+- slug: hakatashi
+  title: 機械学習で石川啄木の未完の短歌を完成させる
+  chapters:
+    - slug: introduction
+      title: イントロダクション
+    - slug: about-takuboku
+      title: 石川啄木について
+    - slug: restoration-summary
+      title: 「最後の一首」を復元する
+    - slug: tokenization
+      title: 字句解析
+    - slug: marcov
+      title: マルコフ連鎖
+    - slug: filtering-tankaes
+      title: 短歌を抽出する
+    - slug: bayesian-filter
+      title: ベイジアンフィルタを作る
+    - slug: study-and-classification
+      title: 学習と分類
+    - slug: result-and-evaluation
+      title: 結果と講評
+    - slug: postscript
+      title: あとがき
+    - slug: bib
+      title: 参考文献
+- slug: hiromu
+  title: 実装でわかる統計的声質変換
+  chapters:
+    - slug: ch01
+      title: はじめに
+    - slug: ch02
+      title: 統計的声質変換の基礎知識
+    - slug: ch03
+      title: 声質変換のための様々なモジュールの実装
+    - slug: ch04
+      title: 混合ガウスモデルによる声質変換
+    - slug: ch05
+      title: トラジェクトリベースな声質変換
+    - slug: ch06
+      title: 固有声に基づく多対多声質変換
+    - slug: ch07
+      title: あとがき
+    - slug: bib
+      title: 参考文献
+- slug: hideo
+  title: Raspberry Pi で照明のスイッチと永遠におさらばする方法
+  chapters:
+    - slug: ch01
+      title: はじめに
+    - slug: ch02
+      title: NFCの基本的なこと
+    - slug: ch03
+      title: NFCタグを読み書きする
+    - slug: ch04
+      title: NFCタグを貼ったドアを照明のスイッチにする
+    - slug: ch05
+      title: 終わりに
