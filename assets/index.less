@@ -1,5 +1,6 @@
 @import (inline) "node_modules/purecss/build/pure.css";
 @import (inline) "node_modules/purecss/build/grids-responsive.css";
+@import (less) "node_modules/octicons/octicons/octicons.less";
 
 @modern-sans-serif: "Meiryo", "メイリオ", "ヒラギノ角ゴ ProN", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ Pro", "Hiragino Kaku Gothic Pro", "游ゴシック体", "YuGothic", "游ゴシック", "Yu Gothic", "IPAゴシック", "IPAGothic", "Arial", "Helvetica", sans-serif;
 @old-sans-serif: "游ゴシック体", "YuGothic", "游ゴシック", "Yu Gothic", "IPAゴシック", "IPAGothic", "MS Cothic", "ＭＳ ゴシック", "Meiryo", "メイリオ", "ヒラギノ角ゴ ProN", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ Pro", "Hiragino Kaku Gothic Pro", "Arial", "Helvetica", sans-serif;
@@ -126,6 +127,8 @@ header {
 		border: 2px solid #FF00B4;
 		box-sizing: border-box;
 
+		overflow: hidden;
+
 		.left {
 			flex-basis: 360px;
 			-webkit-flex-basis: 360px;
@@ -134,6 +137,8 @@ header {
 		.right {
 			flex-grow: 1;
 			-webkit-flex-grow: 1;
+
+			position: relative;
 		}
 
 		.cover {
@@ -146,6 +151,38 @@ header {
 				margin: 0 auto;
 
 				position: relative;
+			}
+		}
+
+		.github-link {
+			@size: 80px;
+
+			display: block;
+
+			width: @size * 2;
+			height: @size * 2;
+
+			position: absolute;
+			top: -@size;
+			right: -@size;
+			transform: rotate(45deg);
+
+			background: #333;
+			color: white;
+			font-size: 3em;
+			text-align: center;
+			text-indent: -0.4em;
+
+			a {
+				width: 100%;
+				height: 100%;
+			}
+
+			span {
+				transform: rotate(-45deg);
+				position: absolute;
+				bottom: 15px;
+				font-size: inherit;
 			}
 		}
 	}
