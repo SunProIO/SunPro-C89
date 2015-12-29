@@ -25,6 +25,7 @@
     "gulp-jade": "^1.1.0",
     "gulp-less": "^3.0.5",
     "gulp-postcss": "^6.0.1",
+    "gulp-rename": "^1.2.2",
     "jquery": "^2.1.4",
     "js-yaml": "^3.4.6",
     "katex": "^0.5.1",
