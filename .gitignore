@@ -129,5 +129,4 @@ Gemfile.lock
 *.pdf
 *.re
 *.css
-images
 dist
