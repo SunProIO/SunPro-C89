@@ -11,6 +11,22 @@ html {
 	color: #333;
 }
 
+ul, ol {
+	padding: 0;
+	margin: 0;
+}
+
+li {
+	list-style: none;
+}
+
+a {
+	&, &:hover, &:active {
+		color: inherit;
+		text-decoration: none;
+	}
+}
+
 .pure-g [class *= "pure-u"] {
 	font-family: inherit;
 }
@@ -124,8 +140,6 @@ header {
 		margin: 0 auto;
 
 		background: white;
-		border: 2px solid #FF00B4;
-		box-sizing: border-box;
 
 		overflow: hidden;
 
@@ -173,6 +187,8 @@ header {
 			text-align: center;
 			text-indent: -0.4em;
 
+			z-index: 1;
+
 			a {
 				width: 100%;
 				height: 100%;
@@ -183,6 +199,82 @@ header {
 				position: absolute;
 				bottom: 15px;
 				font-size: inherit;
+			}
+		}
+
+		.chapters {
+			display: flex;
+			display: -webkit-flex;
+
+			flex-direction: column;
+			-webkit-flex-direction: column;
+
+			padding: 16px;
+			box-sizing: border-box;
+			height: 100%;
+
+			.chapter {
+				flex-grow: 1;
+				-webkit-flex-grow: 1;
+
+				.title {
+					margin: 0.3em;
+					font-size: 22px;
+					padding-left: 0.5em;
+					border-left: 3px solid salmon;
+
+					.author {
+						font-family: Museo, sans-serif;
+						margin-left: 1em;
+
+						&:before {
+							content: '―― ';
+						}
+					}
+				}
+
+				.links {
+					@height: 36px;
+
+					height: @height;
+					padding-right: 20px;
+					display: flex;
+					justify-content: flex-end;
+
+					& > * {
+						flex-basis: 120px;
+						margin: 0 12px;
+					}
+
+					.link {
+						position: relative;
+						height: @height;
+						line-height: @height;
+
+						background: gray;
+
+						text-align: center;
+						color: white;
+						font-weight: bold;
+						font-family: Museo, sans-serif;
+						font-size: 24px;
+
+						border-bottom: 5px solid;
+						border-radius: 4px;
+
+						&-html {
+							@color: #1271CE;
+							background-color: @color;
+							border-color: darken(@color, 30%);
+						}
+
+						&-pdf {
+							@color: #F3431D;
+							background-color: @color;
+							border-color: darken(@color, 30%);
+						}
+					}
+				}
 			}
 		}
 	}

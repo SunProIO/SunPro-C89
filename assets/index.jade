@@ -37,17 +37,23 @@ html(lang='ja')
 					div.chapters
 						each chapter in catalog
 							div.chapter
-								p.title
+								h3.title
 									//- https://github.com/pugjs/jade/issues/2198
 									if chapter.chapters
-										a(href='pub/' + chapter.slug + '/' + chapter.chapters[0])= chapter.title
+										a(href='pub/' + chapter.slug + '/' + chapter.chapters[0].slug)
+											= chapter.title
+											small.author(rel='author')= chapter.author
 									else
-										a(href='pub/' + chapter.slug + '/' + chapter.slug + '.pdf')= chapter.title
+										a(href='pub/' + chapter.slug + '/' + chapter.slug + '.pdf')
+											= chapter.title
+											small.author(rel='author')= chapter.author
 
 								ul.links
 									each format in chapter.formats
-										li
-											if format === 'html'
-												a(href='pub/' + chapter.slug + '/' + chapter.chapters[0]) HTML
-											else if format === 'pdf'
-												a(href='pub/' + chapter.slug + '/' + chapter.slug + '.pdf') PDF
+										if format === 'html'
+											- link = 'pub/' + chapter.slug + '/' + chapter.chapters[0].slug
+										else if format === 'pdf'
+											- link = 'pub/' + chapter.slug + '/' + chapter.slug + '.pdf'
+											
+										a(href=link)
+											li.link(class='link-' + format)= format.toUpperCase()
