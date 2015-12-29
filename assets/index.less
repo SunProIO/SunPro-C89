@@ -150,6 +150,10 @@ header {
 			-webkit-flex-basis: 420px;
 			flex-shrink: 0;
 			-webkit-flex-shrink: 0;
+
+			@media screen and (max-width: 900px) {
+				flex-basis: initial;
+			}
 		}
 
 		.right {
@@ -231,6 +235,8 @@ header {
 			padding: 16px;
 			box-sizing: border-box;
 			height: 100%;
+
+			position: absolute;
 
 			.chapter {
 				flex-grow: 1;
