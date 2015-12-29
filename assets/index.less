@@ -116,7 +116,7 @@ header {
 }
 
 .body {
-	padding: 80px 0;
+	padding: 60px 0;
 
 	h1 {
 		text-align: center;
@@ -134,18 +134,22 @@ header {
 		display: flex;
 		display: -webkit-flex;
 
-		width: 100%;
+		@media screen and (max-width: 900px) {
+			flex-direction: column;
+		}
+
+		width: calc(~"100% - 30px");
 		max-width: 1000px;
 
 		margin: 0 auto;
 
 		background: white;
 
-		overflow: hidden;
-
 		.left {
-			flex-basis: 360px;
-			-webkit-flex-basis: 360px;
+			flex-basis: 420px;
+			-webkit-flex-basis: 420px;
+			flex-shrink: 0;
+			-webkit-flex-shrink: 0;
 		}
 
 		.right {
@@ -153,6 +157,8 @@ header {
 			-webkit-flex-grow: 1;
 
 			position: relative;
+
+			overflow: hidden;
 		}
 
 		.cover {
@@ -183,7 +189,7 @@ header {
 
 			background: #333;
 			color: white;
-			font-size: 3em;
+			font-size: @size * 0.6;
 			text-align: center;
 			text-indent: -0.4em;
 
@@ -197,8 +203,21 @@ header {
 			span {
 				transform: rotate(-45deg);
 				position: absolute;
-				bottom: 15px;
+				bottom: @size * 0.2;
 				font-size: inherit;
+			}
+
+			@media screen and (max-width: 900px) {
+				@size: 15vw;
+				width: @size * 2;
+				height: @size * 2;
+				top: -@size;
+				right: -@size;
+				font-size: @size * 0.6;
+
+				span {
+					bottom: @size * 0.2;
+				}
 			}
 		}
 
@@ -217,18 +236,23 @@ header {
 				flex-grow: 1;
 				-webkit-flex-grow: 1;
 
+				padding: 12px 0;
+				box-sizing: border-box;
+
 				.title {
-					margin: 0.3em;
-					font-size: 22px;
+					margin: 0;
+					font-size: 24px;
 					padding-left: 0.5em;
 					border-left: 3px solid salmon;
 
 					.author {
 						font-family: Museo, sans-serif;
 						margin-left: 1em;
+						color: dimgray;
 
 						&:before {
 							content: '―― ';
+							letter-spacing: -0.1em;
 						}
 					}
 				}
@@ -237,12 +261,12 @@ header {
 					@height: 36px;
 
 					height: @height;
-					padding-right: 20px;
 					display: flex;
 					justify-content: flex-end;
+					margin: 8px 0px;
 
 					& > * {
-						flex-basis: 120px;
+						flex-basis: 150px;
 						margin: 0 12px;
 					}
 
