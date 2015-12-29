@@ -56,4 +56,7 @@ html(lang='ja')
 											- link = 'pub/' + chapter.slug + '/' + chapter.slug + '.pdf'
 											
 										a(href=link)
-											li.link(class='link-' + format)= format.toUpperCase()
+											li.link(class='link-' + format)
+												= format.toUpperCase()
+												if format === 'pdf'
+													small.filesize (#{Math.round(chapter.pdfsize / 100) / 10}MB)

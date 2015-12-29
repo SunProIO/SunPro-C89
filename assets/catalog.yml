@@ -4,6 +4,7 @@
   formats:
     - html
     - pdf
+  pdfsize: 1085
   chapters:
     - slug: introduction
       title: イントロダクション
@@ -33,6 +34,7 @@
   formats:
     - html
     - pdf
+  pdfsize: 2767
   chapters:
     - slug: ch01
       title: はじめに
@@ -55,12 +57,14 @@
   author: 'kinokkory (@shiatsumat)'
   formats:
     - pdf
+  pdfsize: 11205
 - slug: hideo
   title: Raspberry Pi で照明のスイッチと永遠におさらばする方法
   author: '@hideo54'
   formats:
     - html
     - pdf
+  pdfsize: 2221
   chapters:
     - slug: ch01
       title: はじめに
