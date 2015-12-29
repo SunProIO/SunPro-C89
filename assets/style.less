@@ -3,6 +3,7 @@
 html {
 	font-family: "Meiryo", "メイリオ", "ヒラギノ角ゴ ProN", "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ Pro", "Hiragino Kaku Gothic Pro", "游ゴシック体", "YuGothic", "游ゴシック", "Yu Gothic", "IPAゴシック", "IPAGothic", "Arial", "Helvetica", sans-serif;
 	color: #333;
+	word-wrap: break-word;
 }
 
 html, body {
@@ -114,13 +115,13 @@ h2 {
 }
 
 h3 {
-	padding-left: 3em;
+	padding-left: 10%;
 }
 
 ul, ol {
 	margin: 2em 0;
-	padding-left: 80px;
-	padding-right: 36px;
+	padding-left: 12%;
+	padding-right: 5%;
 
 	li {
 		margin: 0.5em 0;
@@ -170,6 +171,35 @@ div.equation {
 	width: 90%;
 	text-align: center;
 	margin: 1.5em auto;
+}
+
+.column {
+	width: 90%;
+	margin: 0 auto;
+	border: 2px solid dimgray;
+	border-radius: 5px;
+	background: blanchedalmond;
+
+	&:before {
+		content: 'COLUMN';
+
+		display: block;
+		height: 2em;
+		line-height: 2em;
+
+		text-align: center;
+		text-indent: 1.5em;
+		letter-spacing: 1.5em;
+		font-weight: bold;
+		font-size: 12px;
+
+		color: #B78700;
+	}
+
+	h1, h2, h3, h4, h5 {
+		padding: 0;
+		text-align: center;
+	}
 }
 
 nav {

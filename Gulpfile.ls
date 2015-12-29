@@ -53,7 +53,7 @@ gulp.task \catalog (done) ->
         return done!
 
 gulp.task \dist-pub <[assets]> ->
-  gulp.src 'src/**/*.@(html|js|css|svg|png|jpeg|jpg|json|pdf)' base: \src
+  gulp.src <[src/**/*.@(html|js|css|svg|png|jpeg|jpg|json|pdf) !**/math/*]> base: \src
   .pipe gulp.dest \dist/pub
 
 gulp.task \dist-root <[assets]> ->
