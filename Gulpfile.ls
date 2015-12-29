@@ -3,8 +3,10 @@ require! {
   \gulp
   \gulp-less
   \gulp-jade
+  \gulp-postcss
   \gulp-browserify
   \js-yaml
+  \autoprefixer
 }
 
 var catalog-data
@@ -12,11 +14,13 @@ var catalog-data
 gulp.task \css ->
   gulp.src \assets/style.less base: \.
   .pipe gulp-less!
+  .pipe gulp-postcss [autoprefixer browsers: ['> 1%']]
   .pipe gulp.dest \src
 
 gulp.task \css-index ->
   gulp.src \assets/index.less base: \.
   .pipe gulp-less!
+  .pipe gulp-postcss [autoprefixer browsers: ['> 1%']]
   .pipe gulp.dest \.
 
 gulp.task \js ->
