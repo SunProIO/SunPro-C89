@@ -49,11 +49,11 @@ gulp.task \catalog (done) ->
         return done!
 
 gulp.task \dist-pub <[assets]> ->
-  gulp.src 'src/**/*.@(html|js|css|svg|png|jpeg|jpg|json)' base: \src
+  gulp.src 'src/**/*.@(html|js|css|svg|png|jpeg|jpg|json|pdf)' base: \src
   .pipe gulp.dest \dist/pub
 
 gulp.task \dist-root <[assets]> ->
-  gulp.src <[index.html assets/*.@(css|eot|svg|ttg|woff)]> base: \.
+  gulp.src <[index.html assets/*.@(css|eot|svg|ttg|woff) images/*]> base: \.
   .pipe gulp.dest \dist
 
 gulp.task \assets <[js css css-index html catalog]>

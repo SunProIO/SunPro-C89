@@ -126,7 +126,6 @@ Gemfile.lock
 *.xml
 *.html
 *.tex
-*.pdf
 *.re
 *.css
 dist
