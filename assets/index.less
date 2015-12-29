@@ -7,11 +7,7 @@
 html {
 	font-family: @modern-sans-serif;
 	background: url(../images/wov.png);
-    color: #333;
-}
-
-html, body {
-	height: 100%;
+	color: #333;
 }
 
 .pure-g [class *= "pure-u"] {
@@ -103,6 +99,8 @@ header {
 }
 
 .body {
+	padding: 80px 0;
+
 	h1 {
 		text-align: center;
 		font-weight: normal;
@@ -116,10 +114,27 @@ header {
 	}
 
 	.publication {
+		display: flex;
+		display: -webkit-flex;
+
 		width: 100%;
 		max-width: 1000px;
 
 		margin: 0 auto;
+
+		background: white;
+		border: 2px solid #FF00B4;
+		box-sizing: border-box;
+
+		.left {
+			flex-basis: 360px;
+			-webkit-flex-basis: 360px;
+		}
+
+		.right {
+			flex-grow: 1;
+			-webkit-flex-grow: 1;
+		}
 
 		.cover {
 			height: 100%;
@@ -127,7 +142,7 @@ header {
 			img {
 				display: block;
 
-				width: 50%;
+				width: 100%;
 				margin: 0 auto;
 
 				position: relative;

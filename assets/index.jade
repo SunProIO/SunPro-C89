@@ -7,16 +7,14 @@ html(lang='ja')
 		link(rel='stylesheet', href='assets/index.css')
 		script(src='https://use.typekit.net/lnq1swp.js')
 		script.
-			try {
-				Typekit.load({async: true});
-			} catch (e) {}
+			try {Typekit.load({async: true})} catch (e) {}
 	body
 		.header-wrap
 			header
 				h1.tk-museo.pure-g
 					span.img-before.pure-u-1.pure-u-md-1-3 SunPro
 					span.img.pure-u-1.pure-u-md-1-3
-						img(src = 'images/logo.png', alt = 'ロゴ')
+						img(src='images/logo.png', alt='ロゴ')
 					span.img-after.pure-u-1.pure-u-md-1-3 C89
 
 				p.place.pure-u-1 3日目 東ム-45a
@@ -26,39 +24,30 @@ html(lang='ja')
 
 			h2 「SunPro会誌 2016」
 
-			div.publication.pure-g
-				div.left.pure-u-1.pure-u-md-1-2
+			div.publication
+				div.left
 					div.cover
 						img(src='images/cover.jpg')
 
-				div.right.pure-u-1.pure-u-md-1-2
+				div.right
 					div.github-link
-						a(href='https://github.com/hakatashi/SunPro-C89') ソースコード
+						a(href='https://github.com/hakatashi/SunPro-C89')
+							span.octicon.octicon-mark-github
 
 					div.chapters
-						div.chapter
-							p.title 機械学習で石川啄木の未完の短歌を完成させる
+						each chapter in catalog
+							div.chapter
+								p.title
+									//- https://github.com/pugjs/jade/issues/2198
+									if chapter.chapters
+										a(href='pub/' + chapter.slug + '/' + chapter.chapters[0])= chapter.title
+									else
+										a(href='pub/' + chapter.slug + '/' + chapter.slug + '.pdf')= chapter.title
 
-							ul.links
-								li.link.link-html HTML
-								li.link.link-pdf PDF
-
-						div.chapter
-							p.title 機械学習で石川啄木の未完の短歌を完成させる
-
-							ul.links
-								li.link.link-pdf PDF
-
-						div.chapter
-							p.title 機械学習で石川啄木の未完の短歌を完成させる
-
-							ul.links
-								li.link.link-html HTML
-								li.link.link-pdf PDF
-
-						div.chapter
-							p.title 機械学習で石川啄木の未完の短歌を完成させる
-
-							ul.links
-								li.link.link-html HTML
-								li.link.link-pdf PDF
+								ul.links
+									each format in chapter.formats
+										li
+											if format === 'html'
+												a(href='pub/' + chapter.slug + '/' + chapter.chapters[0]) HTML
+											else if format === 'pdf'
+												a(href='pub/' + chapter.slug + '/' + chapter.slug + '.pdf') PDF

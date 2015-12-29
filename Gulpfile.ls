@@ -24,7 +24,7 @@ gulp.task \js ->
   .pipe gulp-browserify!
   .pipe gulp.dest \src
 
-gulp.task \html ->
+gulp.task \html <[catalog]> ->
   gulp.src \assets/*.jade
   .pipe gulp-jade locals: catalog: catalog-data
   .pipe gulp.dest \.
@@ -38,7 +38,7 @@ gulp.task \catalog (done) ->
     catch
       return done e
 
-    catalog-data = data
+    catalog-data := data
 
     json = JSON.stringify data, null '  '
 
