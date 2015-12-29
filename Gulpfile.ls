@@ -3,6 +3,7 @@ require! {
   \gulp
   \gulp-less
   \gulp-jade
+  \gulp-rename
   \gulp-postcss
   \gulp-browserify
   \js-yaml
@@ -53,7 +54,12 @@ gulp.task \catalog (done) ->
         return done!
 
 gulp.task \dist-pub <[assets]> ->
-  gulp.src <[src/**/*.@(html|js|css|svg|png|jpeg|jpg|json|pdf) !**/math/*]> base: \src
+  gulp.src <[src/**/*.@(html|js|css|svg|png|jpeg|jpg|json|pdf) !src/**/*.web.* !**/math/*]> base: \src
+  .pipe gulp.dest \dist/pub
+
+gulp.task \dist-webimage <[dist-pub]> ->
+  gulp.src <[src/**/*.web.@(png|jpeg|jpg)]> base: \src
+  .pipe gulp-rename -> it.basename .= replace /\.web$/ ''
   .pipe gulp.dest \dist/pub
 
 gulp.task \dist-root <[assets]> ->
@@ -62,6 +68,6 @@ gulp.task \dist-root <[assets]> ->
 
 gulp.task \assets <[js css css-index html catalog]>
 
-gulp.task \dist <[dist-pub dist-root]>
+gulp.task \dist <[dist-pub dist-webimage dist-root]>
 
 gulp.task \default [\assets]
