@@ -53,6 +53,8 @@ sudo apt-get install lirc
 
 //image[wiring][配線]
 
+写真上は赤外線LED、下は赤外線受光器です。あとは矢印の通りにジャンパワイヤを配線します。
+
 /etc/lirc/hardware.conf を以下のように編集します:
 
 //emlistnum[][text]{
@@ -82,7 +84,7 @@ LIRCMD_CONF=""
 //}
 
 次に、lircモジュールを追加します。
-(@<strong>{やや古い資料では /etc/modules に追加する方法が見つかりますが、仕様変更により以下の方法でないと失敗するようになったので、気をつけてください!})
+(@<strong>{やや古い資料では @<tt>{/etc/modules} に追加する方法が見つかりますが、仕様変更により以下の方法でないと失敗するようになったので、気をつけてください!})
 
 @<tt>{/boot/config.txt} に以下の1行を追加します:
 
@@ -251,8 +253,6 @@ def change_led_value(flag):
 def connected(tag):
     global is_door_closed
     is_door_closed = True
-
-atexit.register(finished)
 
 while True:
     was_door_closed = is_door_closed
