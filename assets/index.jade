@@ -52,29 +52,29 @@ html(lang='ja')
 						.github-link
 							span.mega-octicon.octicon-mark-github
 
-					.chapters
-						each chapter in catalog
-							.chapter
+					.articles
+						each article in catalog
+							.article
 								h3.title
 									//- https://github.com/pugjs/jade/issues/2198
-									if chapter.chapters
-										a(href='pub/' + chapter.slug + '/' + chapter.chapters[0].slug)
-											= chapter.title
-											small.author(rel='author')= chapter.author
+									if article.chapters
+										a(href='pub/' + article.slug + '/' + article.chapters[0].slug)
+											= article.title
+											small.author(rel='author')= article.author
 									else
-										a(href='pub/' + chapter.slug + '/' + chapter.slug + '.pdf')
-											= chapter.title
-											small.author(rel='author')= chapter.author
+										a(href='pub/' + article.slug + '/' + article.slug + '.pdf')
+											= article.title
+											small.author(rel='author')= article.author
 
 								ul.links
-									each format in chapter.formats
+									each format in article.formats
 										if format === 'html'
-											- link = 'pub/' + chapter.slug + '/' + chapter.chapters[0].slug
+											- link = 'pub/' + article.slug + '/' + article.chapters[0].slug
 										else if format === 'pdf'
-											- link = 'pub/' + chapter.slug + '/' + chapter.slug + '.pdf'
+											- link = 'pub/' + article.slug + '/' + article.slug + '.pdf'
 											
 										a(href=link)
 											li.link(class='link-' + format)
 												= format.toUpperCase()
 												if format === 'pdf'
-													small.filesize (#{Math.round(chapter.pdfsize / 100) / 10}MB)
+													small.filesize (#{Math.round(article.pdfsize / 100) / 10}MB)
