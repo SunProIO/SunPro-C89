@@ -19,24 +19,24 @@ html(lang='ja')
 
 				p.place.pure-u-1 3日目 東ム-45a
 
-		div.body
+		.body
 			h1.pure-u-1 頒布情報
 
 			h2 「SunPro会誌 2016」
 
-			div.publication
-				div.left
-					div.cover
+			.publication
+				.left
+					.cover
 						img(src='images/cover.jpg')
 
-				div.right
+				.right
 					a(href='https://github.com/hakatashi/SunPro-C89')
-						div.github-link
+						.github-link
 							span.mega-octicon.octicon-mark-github
 
-					div.chapters
+					.chapters
 						each chapter in catalog
-							div.chapter
+							.chapter
 								h3.title
 									//- https://github.com/pugjs/jade/issues/2198
 									if chapter.chapters
