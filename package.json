@@ -29,7 +29,6 @@
     "gulp-rename": "^1.2.2",
     "jquery": "^2.1.4",
     "js-yaml": "^3.4.6",
-    "katex": "^0.5.1",
     "livescript": "^1.4.0",
     "mathjax": "^2.5.1",
     "normalize.css": "^3.0.3",
