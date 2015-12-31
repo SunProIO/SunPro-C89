@@ -9,7 +9,9 @@ addons:
       - libssl-dev
       - libreadline-dev
       - zlib1g-dev
-before_install: npm install
+before_install:
+  - nvm install
+  - npm install
 script:
   - make all -B
   - npm run build
