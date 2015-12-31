@@ -1,0 +1,15 @@
+language: ruby
+rvm:
+  - 2.2.4
+addons:
+  apt:
+    packages:
+      - texlive-latex-extra
+      - dvipng
+      - libssl-dev
+      - libreadline-dev
+      - zlib1g-dev
+before_install: npm install
+script:
+  - make all -B
+  - npm run build
