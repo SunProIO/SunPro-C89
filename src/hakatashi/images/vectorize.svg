@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 19.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="レイヤー_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px"
+	 y="0px" viewBox="0 0 960 560" style="enable-background:new 0 0 960 560;" xml:space="preserve">
+<style type="text/css">
+	.st0{font-family:'NotoSansCJKjp-Medium-90ms-RKSJ-H';}
+	.st1{font-size:28.194px;}
+	.st2{font-size:17.815px;}
+	.st3{fill:#FFFFFF;stroke:#000000;stroke-miterlimit:10;}
+	.st4{font-family:'NotoSansCJKjp-Regular-90ms-RKSJ-H';}
+	.st5{font-size:38.2825px;}
+	.st6{font-family:'YuMincho-Regular';}
+	.st7{font-size:18.2389px;}
+	.st8{fill:none;stroke:#000000;stroke-width:4;stroke-miterlimit:10;}
+</style>
+<text transform="matrix(1 0 0 1 189.0981 486.2236)" class="st0 st1">bag-of-words</text>
+<text transform="matrix(1 0 0 1 629.999 50.0903)" class="st0 st2">カテゴリ</text>
+<text transform="matrix(1 0 0 1 808.999 50.0903)" class="st0 st2">特徴量</text>
+<circle class="st3" cx="279" cy="255.8" r="183.8"/>
+<text transform="matrix(1 0 0 1 266.4014 125.7183)" class="st4 st5">隅</text>
+<text transform="matrix(1 0 0 1 117.1191 256.0004)" class="st4 st5">悲しい</text>
+<text transform="matrix(1 0 0 1 357.2607 264.8004)" class="st4 st5">白い</text>
+<text transform="matrix(1 0 0 1 271.4014 299.8)" class="st4 st5">女</text>
+<text transform="matrix(1 0 0 1 357.4014 346.8005)" class="st4 st5">棚</text>
+<text transform="matrix(1 0 0 1 225.1191 408.8)" class="st4 st5">重ねる</text>
+<text transform="matrix(1 0 0 1 147.2607 346.8009)" class="st4 st5">居る</text>
+<text transform="matrix(1 0 0 1 271.4014 208.7183)" class="st4 st5">皿</text>
+<text transform="matrix(1 0 0 1 338.2607 188.7)" class="st4 st5">酒場</text>
+<text transform="matrix(1 0 0 1 163.2607 168.7)" class="st4 st5">拭く</text>
+<text transform="matrix(1 0 0 1 629.999 76.4888)"><tspan x="0" y="0" class="st6 st7">0001 関係がある</tspan><tspan x="0" y="21.9" class="st6 st7">0002 関係がない</tspan><tspan x="0" y="43.8" class="st6 st7">0003 影響</tspan><tspan x="0" y="65.7" class="st6 st7">0004 本末</tspan><tspan x="0" y="87.5" class="st6 st7">0005 本(もと)</tspan><tspan x="0" y="109.4" class="st6 st7">0006 末</tspan><tspan x="0" y="131.3" class="st6 st7">0007 因果応報</tspan><tspan x="0" y="153.2" class="st6 st7">　　　︙</tspan><tspan x="0" y="175.1" class="st6 st7">0859 食(店と職)</tspan><tspan x="0" y="197" class="st6 st7">　　　︙</tspan><tspan x="0" y="218.9" class="st6 st7">0923 家具</tspan><tspan x="0" y="240.8" class="st6 st7">　　　︙</tspan><tspan x="0" y="262.6" class="st6 st7">0956 色</tspan><tspan x="0" y="284.5" class="st6 st7">　　　︙</tspan><tspan x="0" y="306.4" class="st6 st7">1038 根・幹・枝など</tspan><tspan x="0" y="328.3" class="st6 st7">1039 葉</tspan><tspan x="0" y="350.2" class="st6 st7">1040 花</tspan><tspan x="0" y="372.1" class="st6 st7">1041 実</tspan><tspan x="0" y="394" class="st6 st7">1042 生える・枯れる</tspan><tspan x="0" y="415.8" class="st6 st7">1043 微生物</tspan><tspan x="0" y="437.7" class="st6 st7">1044 架空生物</tspan></text>
+<text transform="matrix(1 0 0 1 808.999 76.4888)"><tspan x="0" y="0" class="st6 st7">0</tspan><tspan x="0" y="21.9" class="st6 st7">0</tspan><tspan x="0" y="43.8" class="st6 st7">0</tspan><tspan x="0" y="65.7" class="st6 st7">0</tspan><tspan x="0" y="87.5" class="st6 st7">0</tspan><tspan x="0" y="109.4" class="st6 st7">0</tspan><tspan x="0" y="131.3" class="st6 st7">0</tspan><tspan x="0" y="153.2" class="st6 st7">︙</tspan><tspan x="0" y="175.1" class="st6 st7">1000</tspan><tspan x="0" y="197" class="st6 st7">︙</tspan><tspan x="0" y="218.9" class="st6 st7">1000</tspan><tspan x="0" y="240.8" class="st6 st7">︙</tspan><tspan x="0" y="262.6" class="st6 st7">1000</tspan><tspan x="0" y="284.5" class="st6 st7">︙</tspan><tspan x="0" y="306.4" class="st6 st7">0</tspan><tspan x="0" y="328.3" class="st6 st7">0</tspan><tspan x="0" y="350.2" class="st6 st7">0</tspan><tspan x="0" y="372.1" class="st6 st7">0</tspan><tspan x="0" y="394" class="st6 st7">0</tspan><tspan x="0" y="415.8" class="st6 st7">0</tspan><tspan x="0" y="437.7" class="st6 st7">0</tspan></text>
+<g>
+	<g>
+		<line class="st8" x1="423" y1="176" x2="606.4" y2="238.4"/>
+		<g>
+			<polygon points="600.4,246.9 620,243 606.9,228 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line class="st8" x1="437" y1="253.5" x2="603.7" y2="320.6"/>
+		<g>
+			<polygon points="597.3,328.8 617,326 604.7,310.3 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line class="st8" x1="398.7" y1="336.5" x2="603" y2="293"/>
+		<g>
+			<polygon points="602.2,303.4 617,290 598,283.8 			"/>
+		</g>
+	</g>
+</g>
+</svg>

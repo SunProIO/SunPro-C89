@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 19.2.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="レイヤー_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px"
+	 y="0px" viewBox="0 0 960 560" style="enable-background:new 0 0 960 560;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;stroke:#000000;stroke-miterlimit:10;}
+	.st1{enable-background:new    ;}
+	.st2{font-family:'YuMincho-Regular';}
+	.st3{font-size:28.3845px;}
+	.st4{font-family:'NotoSansCJKjp-Medium-90ms-RKSJ-H';}
+	.st5{font-size:28.194px;}
+	.st6{fill:none;stroke:#000000;stroke-width:8;stroke-miterlimit:10;}
+	.st7{font-family:'NotoSansCJKjp-Regular-90ms-RKSJ-H';}
+	.st8{font-size:38.2825px;}
+</style>
+<rect x="34.4" y="168.7" class="st0" width="302.8" height="176.1"/>
+<text transform="matrix(1 0 0 1 50.708 218.877)" class="st1"><tspan x="0" y="0" class="st2 st3">白き皿</tspan><tspan x="0" y="49.5" class="st2 st3">拭きては棚に重ねゐる</tspan><tspan x="0" y="99" class="st2 st3">酒場の隅のかなしき女</tspan></text>
+<text transform="matrix(1 0 0 1 157.6561 392.2236)" class="st4 st5">入力</text>
+<text transform="matrix(1 0 0 1 656.0981 486.2236)" class="st4 st5">bag-of-words</text>
+<g>
+	<g>
+		<line class="st6" x1="362.9" y1="256.8" x2="518.1" y2="256.8"/>
+		<g>
+			<polygon points="514.6,268.8 535.3,256.8 514.6,244.8 			"/>
+		</g>
+	</g>
+</g>
+<text transform="matrix(1 0 0 1 375.6011 227.4976)" class="st4 st5">形態素解析</text>
+<circle class="st0" cx="746" cy="255.8" r="183.8"/>
+<text transform="matrix(1 0 0 1 733.4014 125.7183)" class="st7 st8">隅</text>
+<text transform="matrix(1 0 0 1 584.1191 256.0004)" class="st7 st8">悲しい</text>
+<text transform="matrix(1 0 0 1 824.2607 264.8004)" class="st7 st8">白い</text>
+<text transform="matrix(1 0 0 1 738.4014 299.8)" class="st7 st8">女</text>
+<text transform="matrix(1 0 0 1 824.4014 346.8005)" class="st7 st8">棚</text>
+<text transform="matrix(1 0 0 1 692.1191 408.8)" class="st7 st8">重ねる</text>
+<text transform="matrix(1 0 0 1 614.2607 346.8009)" class="st7 st8">居る</text>
+<text transform="matrix(1 0 0 1 738.4014 208.7183)" class="st7 st8">皿</text>
+<text transform="matrix(1 0 0 1 805.2607 188.7)" class="st7 st8">酒場</text>
+<text transform="matrix(1 0 0 1 630.2607 168.7)" class="st7 st8">拭く</text>
+</svg>
