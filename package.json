@@ -31,6 +31,7 @@
     "js-yaml": "^3.4.6",
     "livescript": "^1.4.0",
     "mathjax": "^2.5.1",
+    "mkdirp": "^0.5.1",
     "normalize.css": "^3.0.3",
     "octicons": "^3.3.0",
     "prelude-ls": "^1.1.2",

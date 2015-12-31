@@ -1,5 +1,6 @@
 require! {
   \fs
+  \mkdirp
   \gulp
   \gulp-less
   \gulp-jade
@@ -47,11 +48,14 @@ gulp.task \catalog (done) ->
 
     json = JSON.stringify data, null '  '
 
-    fs.write-file \src/assets/catalog.json json, \utf8 (error, text) ->
-      if error
-        return done error
-      else
-        return done!
+    mkdirp \src/assets (err) ->
+      return done error if error
+
+      fs.write-file \src/assets/catalog.json json, \utf8 (error, text) ->
+        if error
+          return done error
+        else
+          return done!
 
 gulp.task \dist-pub <[assets]> ->
   gulp.src <[src/**/*.@(html|js|css|svg|png|jpeg|jpg|json|pdf) !src/**/*.web.* !**/math/*]> base: \src
