@@ -1,5 +1,7 @@
 # SunPro会誌 2016
 
+[![Build Status](https://travis-ci.org/SunProIO/SunPro-C89.svg?branch=master)](https://travis-ci.org/SunProIO/SunPro-C89)
+
 ## Build
 
 Ubuntu推奨。
