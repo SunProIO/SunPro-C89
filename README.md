@@ -13,7 +13,7 @@ Ubuntu:
 ```sh
 # apt packages
 sudo apt-get install --no-install-recommends install texlive-latex-extra -y
-sudo apt-get install install dvipng libssl-dev libreadline-dev zlib1g-dev -y
+sudo apt-get install dvipng libssl-dev libreadline-dev zlib1g-dev -y
 
 # rbenv
 git clone https://github.com/rbenv/rbenv.git ~/.rbenv
