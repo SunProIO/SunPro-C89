@@ -20,12 +20,13 @@ html(lang='ja')
 		link(rel='icon', type='image/png', href='/favicon-16x16.png', sizes='16x16')
 		link(rel='manifest', href='/manifest.json')
 		link(rel='mask-icon', href='/safari-pinned-tab.svg', color='#5bbad5')
+		link(rel='canonical', href='https://sunpro.io/c89/')
 		meta(name='msapplication-TileColor', content='#da532c')
 		meta(name='msapplication-TileImage', content='/mstile-144x144.png')
 		meta(name='theme-color', content='#de5920')
 		script(src='https://use.typekit.net/lnq1swp.js')
-		script.
-			try {Typekit.load({async: true})} catch (e) {}
+		script
+			include index.js
 	body
 		.header-wrap
 			header
@@ -36,11 +37,29 @@ html(lang='ja')
 					span.img-after.pure-u-1.pure-u-md-1-3 C89
 
 				p.place.pure-u-1 3日目 東ム-45a
+				
+				.share
+					a.twitter-share-button(
+						href='https://twitter.com/intent/tweet?' + qs.stringify({
+							text: 'SunPro C89特設サイト',
+							hashtags: 'C89,SunPro',
+						}),
+						data-size='large'
+					) ツイート
 
 		.body
 			h1.pure-u-1 頒布情報
 
 			h2 「SunPro会誌 2016」
+			
+			.share
+				a.twitter-share-button(
+					href='https://twitter.com/intent/tweet?' + qs.stringify({
+						text: 'SunPro会誌 2016 | SunPro C89特設サイト',
+						hashtags: 'C89,SunPro',
+					}),
+					data-size='large'
+				) ツイート
 
 			.publication
 				.left

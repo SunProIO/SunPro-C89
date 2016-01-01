@@ -2,6 +2,7 @@ require! {
   \fs
   \mkdirp
   \gulp
+  \querystring
   \gulp-less
   \gulp-jade
   \gulp-rename
@@ -32,7 +33,9 @@ gulp.task \js ->
 
 gulp.task \html <[catalog]> ->
   gulp.src \assets/*.jade
-  .pipe gulp-jade locals: catalog: catalog-data
+  .pipe gulp-jade locals:
+    catalog: catalog-data
+    qs: querystring
   .pipe gulp.dest \.
 
 gulp.task \catalog (done) ->
